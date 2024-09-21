@@ -11,8 +11,6 @@
         
         Zach Cox - zsc2107
     
-        Ben Wald - bw2722
-    
         Orli Elisabeth Cohen - oec2109
 
 
