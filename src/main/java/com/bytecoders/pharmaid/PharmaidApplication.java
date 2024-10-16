@@ -13,5 +13,4 @@ public class PharmaidApplication {
   public static void main(String[] args) {
     SpringApplication.run(PharmaidApplication.class, args);
   }
-
 }
