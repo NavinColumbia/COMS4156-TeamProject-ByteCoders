@@ -24,7 +24,7 @@ public class Prescription {
   @JsonProperty
   private String prescriptionId;
 
-  @OneToMany
+  @ManyToOne
   @JoinColumn(name = "user_id", nullable = false)
   @JsonProperty
   private String userId;
