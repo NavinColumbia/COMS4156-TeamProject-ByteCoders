@@ -1,4 +1,8 @@
 package com.bytecoders.pharmaid.repository.model;
 
-public class PermissionStatus {
+public enum PermissionStatus {
+  PENDING,
+  ACCEPTED,
+  DENIED,
+  REVOKED
 }

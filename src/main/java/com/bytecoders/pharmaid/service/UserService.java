@@ -17,35 +17,37 @@ public class UserService {
   @Autowired
   private UserRepository userRepository;
 
-  /**
-   * Register new user service.
-   *
-   * @param registerUserRequest request
-   * @return User the newly created user
-   */
-  public User registerUser(RegisterUserRequest registerUserRequest) {
-    final User newUser = new User();
-    newUser.setEmail(registerUserRequest.getEmail());
-    newUser.setHashedPassword(PasswordUtils.hashPassword(registerUserRequest.getPassword()));
-    return userRepository.save(newUser);
+
+
+  public User updateUser(String userId, User updatedUser) {
+    return userRepository.findById(userId)
+        .map(user -> {
+          user.setEmail(updatedUser.getEmail());
+          user.setOrganization(updatedUser.getOrganization());
+          user.setUserType(updatedUser.getUserType());
+          return userRepository.save(user);
+        })
+        .orElseThrow(() -> new RuntimeException("User not found"));
   }
 
-  /**
-   * Login user service.
-   *
-   * @param loginUserRequest request
-   * @return the authenticated user
-   */
-  public Optional<User> loginUser(LoginUserRequest loginUserRequest) {
-    Optional<User> userWithEmail = userRepository.findByEmail(loginUserRequest.getEmail());
-
-    if (userWithEmail.isEmpty()) {
-      return Optional.empty();
-    }
-
-    final boolean isCorrectPassword = PasswordUtils.verifyPassword(
-        loginUserRequest.getPassword(), userWithEmail.get().getHashedPassword());
-
-    return isCorrectPassword ? userWithEmail : Optional.empty();
+  public void deleteUser(String userId) {
+    userRepository.deleteById(userId);
   }
+  public boolean existsByEmail(String email) {
+    return userRepository.findByEmail(email).isPresent();
+  }
+
+  public User createUser(User user) {
+    return userRepository.save(user);
+  }
+
+  public Optional<User> getUserById(String id) {
+    return userRepository.findById(id);
+  }
+
+  public Optional<User> getUserByEmail(String email) {
+    return userRepository.findByEmail(email);
+  }
+
+
 }
