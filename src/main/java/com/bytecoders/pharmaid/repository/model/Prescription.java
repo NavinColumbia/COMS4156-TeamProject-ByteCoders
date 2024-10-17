@@ -50,4 +50,8 @@ public class Prescription {
   @Column(name = "end_date")
   @JsonProperty
   private Date endDate;
+
+  @Column(name = "is_active")
+  @JsonProperty
+  private Boolean isActive;
 }
