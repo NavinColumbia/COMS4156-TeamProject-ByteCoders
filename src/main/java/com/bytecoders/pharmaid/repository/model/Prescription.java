@@ -1,57 +1,71 @@
 package com.bytecoders.pharmaid.repository.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import java.util.Date;
-import lombok.Data;
+
+import jakarta.persistence.*;
+
 import org.hibernate.annotations.UuidGenerator;
 
+import java.util.Date;
 
-/**
- * Model class to describe the "prescriptions" table.
- */
 @Entity
 @Data
 @Table(name = "prescriptions")
 public class Prescription {
-
   @Id
   @UuidGenerator
-  @JsonProperty
-  private String prescriptionId;
+  private String id;
 
   @ManyToOne
   @JoinColumn(name = "user_id", nullable = false)
-  @JsonProperty
-  private String userId;
 
-  @ManyToOne
-  @JoinColumn(name = "medication_id", nullable = false)
-  @JsonProperty
-  private String medicationId;
+  private User user;
+
+  @Column(name = "medication_name", nullable = false)
+  private String medicationName;
+
 
   @Column(name = "dosage", nullable = false)
-  @JsonProperty
-  private int dosage;
+  private String dosage;
+
+  @Column(name = "frequency", nullable = false)
+  private String frequency;
 
   @Column(name = "num_doses")
   @JsonProperty
   private int numOfDoses;
 
   @Column(name = "start_date", nullable = false)
-  @JsonProperty
   private Date startDate;
 
   @Column(name = "end_date")
-  @JsonProperty
   private Date endDate;
 
-  @Column(name = "is_active")
-  @JsonProperty
-  private Boolean isActive;
+
+  // Getters and setters
+  public String getId() { return id; }
+  public void setId(String id) { this.id = id; }
+
+  public User getUser() { return user; }
+  public void setUser(User user) { this.user = user; }
+
+  public String getMedicationName() { return medicationName; }
+  public void setMedicationName(String medicationName) { this.medicationName = medicationName; }
+
+  public String getDosage() { return dosage; }
+  public void setDosage(String dosage) { this.dosage = dosage; }
+
+  public String getFrequency() { return frequency; }
+  public void setFrequency(String frequency) { this.frequency = frequency; }
+
+  public Date getStartDate() { return startDate; }
+  public void setStartDate(Date startDate) { this.startDate = startDate; }
+
+  public Date getEndDate() { return endDate; }
+  public void setEndDate(Date endDate) { this.endDate = endDate; }
+
+  // Convenience method to get user ID
+  public String getUserId() {
+    return (user != null) ? user.getId() : null;
+  }
+
 }
