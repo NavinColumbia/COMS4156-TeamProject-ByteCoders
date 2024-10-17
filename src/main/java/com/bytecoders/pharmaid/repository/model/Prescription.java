@@ -23,17 +23,18 @@ public class Prescription {
   @Id
   @UuidGenerator
   @JsonProperty
-  private String prescriptionId;
+  @Column(name = "prescription_id", nullable = false, unique = true)
+  private String id;
 
   @ManyToOne
   @JoinColumn(name = "user_id", nullable = false)
   @JsonProperty
-  private String userId;
+  private User userId;
 
   @ManyToOne
   @JoinColumn(name = "medication_id", nullable = false)
   @JsonProperty
-  private String medicationId;
+  private Medication medicationId;
 
   @Column(name = "dosage", nullable = false)
   @JsonProperty
@@ -41,7 +42,7 @@ public class Prescription {
 
   @Column(name = "num_doses")
   @JsonProperty
-  private int numOfDoses;
+  private int numDoses;
 
   @Column(name = "start_date", nullable = false)
   @JsonProperty
@@ -51,7 +52,7 @@ public class Prescription {
   @JsonProperty
   private Date endDate;
 
-  @Column(name = "is_active")
+  @Column(name = "is_active", nullable = false)
   @JsonProperty
   private Boolean isActive;
 }
