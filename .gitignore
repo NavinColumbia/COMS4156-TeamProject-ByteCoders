@@ -27,6 +27,7 @@ replay_pid*
 
 # Added 
 target/
-.idea 
+.idea/
 .vscode
 .DS_Store
+*.iml

@@ -38,6 +38,10 @@ public class Prescription {
   @JsonProperty
   private int dosage;
 
+  @Column(name = "num_doses")
+  @JsonProperty
+  private int numOfDoses;
+
   @Column(name = "start_date", nullable = false)
   @JsonProperty
   private Date startDate;
