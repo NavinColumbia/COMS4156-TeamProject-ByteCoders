@@ -1,11 +1,14 @@
 package com.bytecoders.pharmaid.repository.model;
 
+
 import jakarta.persistence.*;
+
 import org.hibernate.annotations.UuidGenerator;
 
 import java.util.Date;
 
 @Entity
+@Data
 @Table(name = "prescriptions")
 public class Prescription {
   @Id
@@ -14,10 +17,12 @@ public class Prescription {
 
   @ManyToOne
   @JoinColumn(name = "user_id", nullable = false)
+
   private User user;
 
   @Column(name = "medication_name", nullable = false)
   private String medicationName;
+
 
   @Column(name = "dosage", nullable = false)
   private String dosage;
@@ -25,11 +30,16 @@ public class Prescription {
   @Column(name = "frequency", nullable = false)
   private String frequency;
 
+  @Column(name = "num_doses")
+  @JsonProperty
+  private int numOfDoses;
+
   @Column(name = "start_date", nullable = false)
   private Date startDate;
 
   @Column(name = "end_date")
   private Date endDate;
+
 
   // Getters and setters
   public String getId() { return id; }
@@ -57,4 +67,5 @@ public class Prescription {
   public String getUserId() {
     return (user != null) ? user.getId() : null;
   }
+
 }
