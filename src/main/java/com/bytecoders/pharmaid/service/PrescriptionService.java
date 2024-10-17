@@ -2,7 +2,6 @@ package com.bytecoders.pharmaid.service;
 
 import com.bytecoders.pharmaid.repository.PrescriptionRepository;
 import com.bytecoders.pharmaid.repository.model.Prescription;
-import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -35,17 +34,6 @@ public class PrescriptionService {
    */
   public Optional<Prescription> getPrescriptionById(String prescriptionId) {
     return prescriptionRepository.findById(prescriptionId);
-  }
-
-  /**
-   * Get all prescriptions for a specific user.
-   *
-   * @param userId the user ID
-   * @return the user's list of prescriptions
-   */
-  public List<Prescription> getPrescriptionsByUserId(String userId) {
-    // TODO: need to determine how to return prescriptions
-    return prescriptionRepository.findByUserId(userId).stream().toList();
   }
 
   /**
