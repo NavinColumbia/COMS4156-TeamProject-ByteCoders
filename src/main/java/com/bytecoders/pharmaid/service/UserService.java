@@ -51,4 +51,8 @@ public class UserService {
 
     return isCorrectPassword ? userWithEmail : Optional.empty();
   }
+
+  public Optional<User> getUser(String userId) {
+    return userRepository.findById(userId);
+  }
 }
