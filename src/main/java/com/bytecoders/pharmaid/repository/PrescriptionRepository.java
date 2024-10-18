@@ -1,9 +1,8 @@
 package com.bytecoders.pharmaid.repository;
 
 import com.bytecoders.pharmaid.repository.model.Prescription;
-import org.springframework.data.jpa.repository.JpaRepository;
-
 import java.util.List;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
  * JPA prescriptions repository.
