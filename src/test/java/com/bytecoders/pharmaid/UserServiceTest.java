@@ -1,20 +1,28 @@
 package com.bytecoders.pharmaid;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.bytecoders.pharmaid.repository.PrescriptionRepository;
 import com.bytecoders.pharmaid.repository.UserRepository;
 import com.bytecoders.pharmaid.repository.model.User;
 import com.bytecoders.pharmaid.service.UserService;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
+/**
+ *
+ */
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
@@ -27,6 +35,9 @@ class UserServiceTest {
   @InjectMocks
   private UserService userService;
 
+  /**
+   *
+   */
   @Test
   void updateUser_success() {
     User existingUser = new User();
@@ -45,6 +56,9 @@ class UserServiceTest {
     verify(userRepository).save(existingUser);
   }
 
+  /**
+   * tests updation of user
+   */
   @Test
   void updateUser_userNotFound() {
     User updatedUser = new User();
@@ -55,6 +69,9 @@ class UserServiceTest {
     assertThrows(RuntimeException.class, () -> userService.updateUser("123", updatedUser));
   }
 
+  /**
+   * tests deletion of user
+   */
   @Test
   void deleteUser_success() {
     doNothing().when(prescriptionRepository).deleteByUserId("123");
@@ -66,6 +83,9 @@ class UserServiceTest {
     verify(userRepository).deleteById("123");
   }
 
+  /**
+   * Tests that user exists
+   */
   @Test
   void existsByEmail_userExists() {
     when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(new User()));
@@ -75,6 +95,9 @@ class UserServiceTest {
     assertTrue(result);
   }
 
+  /**
+   * Tests that user does not exist
+   */
   @Test
   void existsByEmail_userDoesNotExist() {
     when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.empty());

@@ -1,14 +1,19 @@
 package com.bytecoders.pharmaid;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
+
 import com.bytecoders.pharmaid.repository.SharingPermissionRepository;
 import com.bytecoders.pharmaid.repository.UserRepository;
 import com.bytecoders.pharmaid.repository.model.PermissionType;
 import com.bytecoders.pharmaid.repository.model.Prescription;
-import com.bytecoders.pharmaid.repository.model.User;
 import com.bytecoders.pharmaid.repository.model.SharingPermissionStatus;
+import com.bytecoders.pharmaid.repository.model.User;
 import com.bytecoders.pharmaid.security.CustomUserDetails;
 import com.bytecoders.pharmaid.service.AuthorizationService;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -17,11 +22,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AuthorizationServiceTest {
@@ -61,7 +61,8 @@ class AuthorizationServiceTest {
     when(userRepository.findById(currentUserId)).thenReturn(Optional.of(currentUser));
     when(userRepository.findById(targetUserId)).thenReturn(Optional.of(targetUser));
     when(sharingPermissionRepository.existsByOwnerAndSharedWithUserAndPermissionTypeInAndStatus(
-        targetUser, currentUser, List.of(PermissionType.VIEW, PermissionType.EDIT), SharingPermissionStatus.ACCEPTED))
+        targetUser, currentUser, List.of(PermissionType.VIEW, PermissionType.EDIT),
+        SharingPermissionStatus.ACCEPTED))
         .thenReturn(true);
 
     boolean result = authorizationService.canAccessUserRecords(currentUserId, targetUserId);

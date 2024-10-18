@@ -1,18 +1,22 @@
 package com.bytecoders.pharmaid.service;
 
-import com.bytecoders.pharmaid.repository.PrescriptionRepository;
-import com.bytecoders.pharmaid.repository.UserRepository;
-import com.bytecoders.pharmaid.repository.model.Prescription;
-import com.bytecoders.pharmaid.repository.model.User;
-import com.bytecoders.pharmaid.service.AuthorizationService;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import com.bytecoders.pharmaid.repository.PrescriptionRepository;
+import com.bytecoders.pharmaid.repository.UserRepository;
+import com.bytecoders.pharmaid.repository.model.Prescription;
+import com.bytecoders.pharmaid.repository.model.User;
 
+
+/**
+ *
+ */
 @Service
 public class PrescriptionService {
 
@@ -25,6 +29,11 @@ public class PrescriptionService {
   @Autowired
   private AuthorizationService authorizationService;
 
+  
+  /** 
+   * @param prescriptionId
+   * @return Prescription
+   */
   @Transactional(readOnly = true)
   public Prescription getPrescriptionById(String prescriptionId) {
     Prescription prescription = prescriptionRepository.findById(prescriptionId)

@@ -1,5 +1,10 @@
 package com.bytecoders.pharmaid;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.bytecoders.pharmaid.repository.PrescriptionRepository;
 import com.bytecoders.pharmaid.repository.UserRepository;
@@ -7,6 +12,8 @@ import com.bytecoders.pharmaid.repository.model.Prescription;
 import com.bytecoders.pharmaid.repository.model.User;
 import com.bytecoders.pharmaid.service.AuthorizationService;
 import com.bytecoders.pharmaid.service.PrescriptionService;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -14,12 +21,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class PrescriptionServiceTest {
@@ -96,7 +97,8 @@ class PrescriptionServiceTest {
     when(userRepository.findById("user123")).thenReturn(Optional.of(user));
     when(authorizationService.canModifyPrescription(prescription)).thenReturn(false);
 
-    assertThrows(AccessDeniedException.class, () -> prescriptionService.createPrescription("user123", prescription));
+    assertThrows(AccessDeniedException.class,
+        () -> prescriptionService.createPrescription("user123", prescription));
   }
 
   @Test
@@ -118,7 +120,8 @@ class PrescriptionServiceTest {
     when(prescriptionRepository.findById("123")).thenReturn(Optional.of(prescription));
     when(authorizationService.canModifyPrescription(prescription)).thenReturn(false);
 
-    assertThrows(AccessDeniedException.class, () -> prescriptionService.deletePrescription("user123", "123"));
+    assertThrows(AccessDeniedException.class,
+        () -> prescriptionService.deletePrescription("user123", "123"));
   }
 }
 

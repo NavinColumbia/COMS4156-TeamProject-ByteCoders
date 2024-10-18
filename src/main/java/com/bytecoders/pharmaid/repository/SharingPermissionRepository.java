@@ -5,13 +5,13 @@ import com.bytecoders.pharmaid.repository.model.SharingPermission;
 import com.bytecoders.pharmaid.repository.model.SharingPermissionStatus;
 import com.bytecoders.pharmaid.repository.model.User;
 import java.util.Collection;
-import org.springframework.data.jpa.repository.JpaRepository;
-
-import java.util.List;
 import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-
+/**
+ *
+ */
 @Repository
 public interface SharingPermissionRepository extends JpaRepository<SharingPermission, String> {
 

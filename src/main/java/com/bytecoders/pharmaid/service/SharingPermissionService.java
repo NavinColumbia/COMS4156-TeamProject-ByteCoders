@@ -1,5 +1,13 @@
 package com.bytecoders.pharmaid.service;
 
+import java.util.Date;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+
 import com.bytecoders.pharmaid.repository.SharingPermissionRepository;
 import com.bytecoders.pharmaid.repository.UserRepository;
 import com.bytecoders.pharmaid.repository.model.SharingPermission;
@@ -8,14 +16,9 @@ import com.bytecoders.pharmaid.repository.model.SharingRequest;
 import com.bytecoders.pharmaid.repository.model.User;
 import com.bytecoders.pharmaid.security.CustomUserDetails;
 
-import java.util.Date;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
-
-
+/**
+ *
+ */
 @Service
 public class SharingPermissionService {
 
@@ -26,6 +29,12 @@ public class SharingPermissionService {
   private UserRepository userRepository;
 
 
+  
+  /** 
+   * @param ownerId
+   * @param request
+   * @return String
+   */
   public String createSharingRequest(String ownerId, SharingRequest request) {
 
     User owner = userRepository.findById(ownerId)

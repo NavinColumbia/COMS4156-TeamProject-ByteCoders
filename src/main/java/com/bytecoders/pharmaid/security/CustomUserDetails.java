@@ -1,13 +1,16 @@
 package com.bytecoders.pharmaid.security;
 
-import com.bytecoders.pharmaid.repository.model.User;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.Collections;
 
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import com.bytecoders.pharmaid.repository.model.User;
+
+/**
+ *
+ */
 public class CustomUserDetails implements UserDetails {
 
   private User user;
@@ -16,10 +19,18 @@ public class CustomUserDetails implements UserDetails {
     this.user = user;
   }
 
+  
+  /** 
+   * @return User
+   */
   public User getUser() {
     return user;
   }
 
+  
+  /** 
+   * @return String
+   */
   @Override
   public String getUsername() {
     return user.getEmail(); // Return email as username

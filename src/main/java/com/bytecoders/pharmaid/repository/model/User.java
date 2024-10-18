@@ -1,16 +1,15 @@
 package com.bytecoders.pharmaid.repository.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import org.hibernate.annotations.UuidGenerator;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import org.hibernate.annotations.UuidGenerator;
-import org.springframework.lang.NonNull;
 
+/**
+ *
+ */
 @Entity
 @Table(name = "users")
 public class User {
@@ -26,6 +25,10 @@ public class User {
   @Column(name = "hashed_password", nullable = false)
   private String hashedPassword;
 
+  
+  /** 
+   * @return String
+   */
   // Getters and setters
   public String getId() {
     return id;

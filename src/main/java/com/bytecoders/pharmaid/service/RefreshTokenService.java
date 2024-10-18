@@ -1,18 +1,22 @@
 package com.bytecoders.pharmaid.service;
 
-import com.bytecoders.pharmaid.repository.RefreshTokenRepository;
-import com.bytecoders.pharmaid.repository.UserRepository;
-import com.bytecoders.pharmaid.repository.model.RefreshToken;
-import com.bytecoders.pharmaid.repository.model.User;
+import java.time.Instant;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
-import java.util.Optional;
-import java.util.UUID;
+import com.bytecoders.pharmaid.repository.RefreshTokenRepository;
+import com.bytecoders.pharmaid.repository.UserRepository;
+import com.bytecoders.pharmaid.repository.model.RefreshToken;
+import com.bytecoders.pharmaid.repository.model.User;
 
+/**
+ *
+ */
 @Service
 public class RefreshTokenService {
 
@@ -25,9 +29,15 @@ public class RefreshTokenService {
   @Autowired
   private UserRepository userRepository;
 
+  
+  /** 
+   * @param token
+   * @return Optional<RefreshToken>
+   */
   public Optional<RefreshToken> findByToken(String token) {
     return refreshTokenRepository.findByToken(token);
   }
+
   @Transactional
   public RefreshToken createRefreshToken(String userId) {
     User user = userRepository.findById(userId).orElseThrow(() ->

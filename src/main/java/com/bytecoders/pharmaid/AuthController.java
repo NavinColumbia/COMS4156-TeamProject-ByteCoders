@@ -4,13 +4,12 @@ import com.bytecoders.pharmaid.dto.AuthResponse;
 import com.bytecoders.pharmaid.dto.LoginRequest;
 import com.bytecoders.pharmaid.dto.RegisterRequest;
 import com.bytecoders.pharmaid.dto.TokenRefreshRequest;
-import com.bytecoders.pharmaid.repository.model.User;
 import com.bytecoders.pharmaid.repository.model.RefreshToken;
-
+import com.bytecoders.pharmaid.repository.model.User;
 import com.bytecoders.pharmaid.security.JwtTokenProvider;
 import com.bytecoders.pharmaid.service.RefreshTokenService;
 import com.bytecoders.pharmaid.service.UserService;
-
+import jakarta.validation.Valid;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -19,11 +18,16 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 
-import jakarta.validation.Valid;
-
+/**
+ *
+ */
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -43,6 +47,11 @@ public class AuthController {
   @Autowired
   private JwtTokenProvider tokenProvider;
 
+  /**
+   *
+   * @param loginRequest
+   * @return
+   */
   @PostMapping("/login")
   public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
     Authentication authentication = authenticationManager.authenticate(
@@ -57,6 +66,11 @@ public class AuthController {
     return ResponseEntity.ok(new AuthResponse(jwt));
   }
 
+  /**
+   *
+   * @param registerRequest
+   * @return
+   */
   @PostMapping("/register")
   public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
     if (userService.existsByEmail(registerRequest.getEmail())) {
@@ -72,6 +86,11 @@ public class AuthController {
     return ResponseEntity.ok("User registered successfully!");
   }
 
+  /**
+   *
+   * @param request
+   * @return
+   */
   @PostMapping("/refresh")
   public ResponseEntity<?> refreshToken(@Valid @RequestBody TokenRefreshRequest request) {
     String requestRefreshToken = request.getRefreshToken();
@@ -94,11 +113,16 @@ public class AuthController {
   }
 
 
+  /**
+   *
+   * @param token
+   * @return
+   */
   @PostMapping("/logout")
   public ResponseEntity<?> logoutUser(@RequestHeader("Authorization") String token) {
     if (token != null && token.startsWith("Bearer ")) {
       token = token.substring(7);
-      String userId = tokenProvider.getUserIdFromJWT(token);
+      String userId = tokenProvider.getUserIdFromJwt(token);
       refreshTokenService.deleteByUserId(userId);
     }
     SecurityContextHolder.clearContext();

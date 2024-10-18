@@ -3,6 +3,9 @@ package com.bytecoders.pharmaid.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
+/**
+ *
+ */
 public class RegisterRequest {
 
   @NotBlank
@@ -12,6 +15,10 @@ public class RegisterRequest {
   @NotBlank
   private String password;
 
+  
+  /** 
+   * @return String
+   */
   // Getters and Setters
   public String getEmail() {
     return email;

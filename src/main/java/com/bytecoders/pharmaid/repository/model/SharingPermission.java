@@ -1,21 +1,18 @@
 package com.bytecoders.pharmaid.repository.model;
 
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Date;
+
+import org.hibernate.annotations.UuidGenerator;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.Temporal;
-import jakarta.persistence.TemporalType;
-import java.util.Date;
-import org.hibernate.annotations.UuidGenerator;
 
 @Entity
 @Table(name = "sharing_permissions")
@@ -48,6 +45,10 @@ public class SharingPermission {
   @Column(name = "expires_at")
   private Date expiresAt;
 
+  
+  /** 
+   * @return String
+   */
   // Getters and setters
   public String getId() {
     return id;

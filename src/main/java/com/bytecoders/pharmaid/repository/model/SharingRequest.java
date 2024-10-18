@@ -7,6 +7,10 @@ public class SharingRequest {
   @NotNull
   private PermissionType permissionType;
 
+  
+  /** 
+   * @return PermissionType
+   */
   public @NotNull PermissionType getPermissionType() {
     return permissionType;
   }
@@ -15,6 +19,6 @@ public class SharingRequest {
       @NotNull PermissionType permissionType) {
     this.permissionType = permissionType;
   }
-// Getters and setters
+
 }
 

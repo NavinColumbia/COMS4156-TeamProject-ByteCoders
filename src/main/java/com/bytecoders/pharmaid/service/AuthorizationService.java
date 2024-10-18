@@ -1,20 +1,24 @@
 package com.bytecoders.pharmaid.service;
 
-import com.bytecoders.pharmaid.repository.model.PermissionType;
-import com.bytecoders.pharmaid.repository.model.Prescription;
-import com.bytecoders.pharmaid.repository.model.SharingPermissionStatus;
-import com.bytecoders.pharmaid.repository.model.User;
-import com.bytecoders.pharmaid.repository.UserRepository;
-import com.bytecoders.pharmaid.repository.SharingPermissionRepository;
-import com.bytecoders.pharmaid.security.CustomUserDetails;
+import java.util.Arrays;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
-import java.util.List;
+import com.bytecoders.pharmaid.repository.SharingPermissionRepository;
+import com.bytecoders.pharmaid.repository.UserRepository;
+import com.bytecoders.pharmaid.repository.model.PermissionType;
+import com.bytecoders.pharmaid.repository.model.Prescription;
+import com.bytecoders.pharmaid.repository.model.SharingPermissionStatus;
+import com.bytecoders.pharmaid.repository.model.User;
+import com.bytecoders.pharmaid.security.CustomUserDetails;
 
+/**
+ *
+ */
 @Service
 public class AuthorizationService {
 
@@ -24,6 +28,12 @@ public class AuthorizationService {
   @Autowired
   private SharingPermissionRepository sharingPermissionRepository;
 
+  
+  /** 
+   * @param currentUserId
+   * @param targetUserId
+   * @return boolean
+   */
   public boolean canAccessUserRecords(String currentUserId, String targetUserId) {
 
     if (currentUserId.equals(targetUserId)) {

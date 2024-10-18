@@ -1,19 +1,22 @@
 package com.bytecoders.pharmaid.service;
 
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import com.bytecoders.pharmaid.repository.PrescriptionRepository;
 import com.bytecoders.pharmaid.repository.UserRepository;
 import com.bytecoders.pharmaid.repository.model.User;
 
 import jakarta.transaction.Transactional;
-import java.util.Optional;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 /**
  * Service operations around {@link com.bytecoders.pharmaid.repository.model.User}.
  */
 @Service
 public class UserService {
+
   @Autowired
   private UserRepository userRepository;
 
@@ -21,6 +24,12 @@ public class UserService {
   private PrescriptionRepository prescriptionRepository;
 
 
+  
+  /** 
+   * @param userId
+   * @param updatedUser
+   * @return User
+   */
   public User updateUser(String userId, User updatedUser) {
     return userRepository.findById(userId)
         .map(user -> {
@@ -38,6 +47,7 @@ public class UserService {
     // Now delete the user
     userRepository.deleteById(userId);
   }
+
   public boolean existsByEmail(String email) {
     return userRepository.findByEmail(email).isPresent();
   }
