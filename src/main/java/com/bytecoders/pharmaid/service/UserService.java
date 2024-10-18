@@ -1,8 +1,10 @@
 package com.bytecoders.pharmaid.service;
 
+import com.bytecoders.pharmaid.repository.PrescriptionRepository;
 import com.bytecoders.pharmaid.repository.UserRepository;
 import com.bytecoders.pharmaid.repository.model.User;
 
+import jakarta.transaction.Transactional;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,6 +17,8 @@ public class UserService {
   @Autowired
   private UserRepository userRepository;
 
+  @Autowired
+  private PrescriptionRepository prescriptionRepository;
 
 
   public User updateUser(String userId, User updatedUser) {
@@ -26,7 +30,12 @@ public class UserService {
         .orElseThrow(() -> new RuntimeException("User not found"));
   }
 
+  @Transactional
   public void deleteUser(String userId) {
+    // First, delete associated prescriptions (or other related entities)
+    prescriptionRepository.deleteByUserId(userId);
+
+    // Now delete the user
     userRepository.deleteById(userId);
   }
   public boolean existsByEmail(String email) {

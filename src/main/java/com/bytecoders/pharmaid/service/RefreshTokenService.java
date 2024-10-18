@@ -28,8 +28,23 @@ public class RefreshTokenService {
   public Optional<RefreshToken> findByToken(String token) {
     return refreshTokenRepository.findByToken(token);
   }
-
+  @Transactional
   public RefreshToken createRefreshToken(String userId) {
+    User user = userRepository.findById(userId).orElseThrow(() ->
+        new RuntimeException("User not found with id: " + userId));
+
+    // Delete existing refresh tokens for the user
+    refreshTokenRepository.deleteByUser(user);
+
+    // Create new refresh token
+    RefreshToken refreshToken = new RefreshToken();
+    refreshToken.setUser(user);
+    refreshToken.setExpiryDate(Instant.now().plusMillis(refreshTokenDurationMs));
+    refreshToken.setToken(UUID.randomUUID().toString());
+
+    refreshToken = refreshTokenRepository.save(refreshToken);
+    return refreshToken;
+    /*
     RefreshToken refreshToken = new RefreshToken();
 
     refreshToken.setUser(userRepository.findById(userId).get());
@@ -38,6 +53,8 @@ public class RefreshTokenService {
 
     refreshToken = refreshTokenRepository.save(refreshToken);
     return refreshToken;
+
+     */
   }
 
   public RefreshToken verifyExpiration(RefreshToken token) {
@@ -51,6 +68,9 @@ public class RefreshTokenService {
 
   @Transactional
   public int deleteByUserId(String userId) {
-    return refreshTokenRepository.deleteByUser(userRepository.findById(userId).get());
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+    return refreshTokenRepository.deleteByUser(user);
   }
+
 }
