@@ -9,10 +9,12 @@ import org.junit.jupiter.api.Test;
  * Tests for hashing password logic.
  */
 public class PasswordUtilsTests {
+  private final PasswordUtils passwordUtils = new PasswordUtils();
+
   @Test
   public void testHashPassword() {
-    final String hashedPassword = PasswordUtils.hashPassword("someSecretPassword");
+    final String hashedPassword = passwordUtils.hashPassword("someSecretPassword");
     assertNotEquals("someSecretPassword", hashedPassword);
-    assertTrue(PasswordUtils.verifyPassword("someSecretPassword", hashedPassword));
+    assertTrue(passwordUtils.verifyPassword("someSecretPassword", hashedPassword));
   }
 }

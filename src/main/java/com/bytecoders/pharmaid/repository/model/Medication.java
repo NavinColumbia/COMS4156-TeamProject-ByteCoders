@@ -1,6 +1,5 @@
 package com.bytecoders.pharmaid.repository.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,22 +9,18 @@ import lombok.Data;
 import org.hibernate.annotations.UuidGenerator;
 
 /**
- * Model class to describe the "users" table.
+ * Model class to describe the "medications" table.
  */
 @Data
 @Entity
-@Table(name = "users")
-public class User {
+@Table(name = "medications")
+public class Medication {
   @Id
   @UuidGenerator
   @JsonProperty
-  private String id;
+  private String medicationId;
 
-  @Column(name = "email", nullable = false, unique = true)
+  @Column(name = "medication_name", nullable = false)
   @JsonProperty
-  private String email;
-
-  @Column(name = "hashed_password", nullable = false)
-  @JsonIgnore
-  private String hashedPassword;
+  private String medicationName;
 }

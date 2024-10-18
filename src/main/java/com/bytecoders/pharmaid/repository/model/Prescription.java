@@ -15,11 +15,10 @@ import org.hibernate.annotations.UuidGenerator;
 /**
  * Model class to describe the "prescriptions" table.
  */
-@Entity
 @Data
+@Entity
 @Table(name = "prescriptions")
 public class Prescription {
-
   @Id
   @UuidGenerator
   @JsonProperty
@@ -28,12 +27,12 @@ public class Prescription {
   @ManyToOne
   @JoinColumn(name = "user_id", nullable = false)
   @JsonProperty
-  private String userId;
+  private User user;
 
   @ManyToOne
   @JoinColumn(name = "medication_id", nullable = false)
   @JsonProperty
-  private String medicationId;
+  private Medication medicationId;
 
   @Column(name = "dosage", nullable = false)
   @JsonProperty
