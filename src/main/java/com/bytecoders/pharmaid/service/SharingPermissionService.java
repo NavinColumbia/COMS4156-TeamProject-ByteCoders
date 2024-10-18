@@ -1,37 +1,48 @@
 package com.bytecoders.pharmaid.service;
 
-import com.bytecoders.pharmaid.repository.PrescriptionRepository;
+import com.bytecoders.pharmaid.repository.OrganizationRepository;
 import com.bytecoders.pharmaid.repository.SharingPermissionRepository;
 import com.bytecoders.pharmaid.repository.UserRepository;
-import com.bytecoders.pharmaid.repository.model.PermissionType;
-import com.bytecoders.pharmaid.repository.model.Prescription;
+import com.bytecoders.pharmaid.repository.model.Organization;
+import com.bytecoders.pharmaid.repository.model.OrganizationPermissionRequest;
 import com.bytecoders.pharmaid.repository.model.SharingPermission;
+import com.bytecoders.pharmaid.repository.model.SharingPermissionStatus;
+import com.bytecoders.pharmaid.repository.model.SharingRequest;
 import com.bytecoders.pharmaid.repository.model.User;
 import java.util.Date;
-import java.util.List;
-import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-
 
 @Service
 public class SharingPermissionService {
+
   @Autowired
   private SharingPermissionRepository sharingPermissionRepository;
 
   @Autowired
   private UserRepository userRepository;
 
-  public String createSharingRequest(String ownerId, String requesterId) {
+  @Autowired
+  private OrganizationRepository organizationRepository;
+
+  public String createSharingRequest(String ownerId, SharingRequest request) {
     User owner = userRepository.findById(ownerId)
         .orElseThrow(() -> new RuntimeException("Owner not found"));
+
+    // Get the requester ID from the security context
+    String requesterId = getCurrentUserId();
+
     User requester = userRepository.findById(requesterId)
         .orElseThrow(() -> new RuntimeException("Requester not found"));
 
     SharingPermission sharingPermission = new SharingPermission();
     sharingPermission.setOwner(owner);
     sharingPermission.setSharedWithUser(requester);
-    sharingPermission.setPermissionType(PermissionType.VIEW);
+    sharingPermission.setPermissionType(request.getPermissionType());
+    sharingPermission.setStatus(SharingPermissionStatus.PENDING);
     sharingPermission.setCreatedAt(new Date());
 
     SharingPermission savedPermission = sharingPermissionRepository.save(sharingPermission);
@@ -39,36 +50,104 @@ public class SharingPermissionService {
   }
 
   public void acceptSharingRequest(String ownerId, String requestId) {
+    String currentUserId = getCurrentUserId();
+
+    if (!currentUserId.equals(ownerId)) {
+      throw new AccessDeniedException("You are not authorized to accept this request.");
+    }
+
     SharingPermission permission = sharingPermissionRepository.findById(requestId)
         .orElseThrow(() -> new RuntimeException("Sharing request not found"));
 
     if (!permission.getOwner().getId().equals(ownerId)) {
-      throw new RuntimeException("Unauthorized to accept this request");
+      throw new AccessDeniedException("You are not authorized to accept this request.");
     }
 
-    permission.setPermissionType(PermissionType.VIEW);
+    permission.setStatus(SharingPermissionStatus.ACCEPTED);
     sharingPermissionRepository.save(permission);
   }
 
   public void denySharingRequest(String ownerId, String requestId) {
+    String currentUserId = getCurrentUserId();
+
+    if (!currentUserId.equals(ownerId)) {
+      throw new AccessDeniedException("You are not authorized to deny this request.");
+    }
+
     SharingPermission permission = sharingPermissionRepository.findById(requestId)
         .orElseThrow(() -> new RuntimeException("Sharing request not found"));
 
     if (!permission.getOwner().getId().equals(ownerId)) {
-      throw new RuntimeException("Unauthorized to deny this request");
+      throw new AccessDeniedException("You are not authorized to deny this request.");
+    }
+
+    permission.setStatus(SharingPermissionStatus.DENIED);
+    sharingPermissionRepository.save(permission);
+  }
+
+  public void revokeSharingPermission(String ownerId, String requestId) {
+    String currentUserId = getCurrentUserId();
+
+    if (!currentUserId.equals(ownerId)) {
+      throw new AccessDeniedException("You are not authorized to revoke this permission.");
+    }
+
+    SharingPermission permission = sharingPermissionRepository.findById(requestId)
+        .orElseThrow(() -> new RuntimeException("Sharing permission not found"));
+
+    if (!permission.getOwner().getId().equals(ownerId)) {
+      throw new AccessDeniedException("You are not authorized to revoke this permission.");
     }
 
     sharingPermissionRepository.delete(permission);
   }
 
-  public void revokeSharingPermission(String ownerId, String requestId) {
-    SharingPermission permission = sharingPermissionRepository.findById(requestId)
-        .orElseThrow(() -> new RuntimeException("Sharing permission not found"));
+  public void grantPermissionToOrganization(String ownerId, OrganizationPermissionRequest request) {
+    String currentUserId = getCurrentUserId();
 
-    if (!permission.getOwner().getId().equals(ownerId)) {
-      throw new RuntimeException("Unauthorized to revoke this permission");
+    if (!currentUserId.equals(ownerId)) {
+      throw new AccessDeniedException("You are not authorized to grant permissions for this user.");
     }
 
-    sharingPermissionRepository.delete(permission);
+    User owner = userRepository.findById(ownerId)
+        .orElseThrow(() -> new RuntimeException("Owner not found"));
+
+    Organization organization = organizationRepository.findById(request.getOrganizationId())
+        .orElseThrow(() -> new RuntimeException("Organization not found"));
+
+    SharingPermission sharingPermission = new SharingPermission();
+    sharingPermission.setOwner(owner);
+    sharingPermission.setSharedWithOrganization(organization);
+    sharingPermission.setPermissionType(request.getPermissionType());
+    sharingPermission.setStatus(SharingPermissionStatus.ACCEPTED);
+    sharingPermission.setCreatedAt(new Date());
+
+    sharingPermissionRepository.save(sharingPermission);
+  }
+
+  public void revokePermissionFromOrganization(String ownerId, OrganizationPermissionRequest request) {
+    String currentUserId = getCurrentUserId();
+
+    if (!currentUserId.equals(ownerId)) {
+      throw new AccessDeniedException("You are not authorized to revoke permissions for this user.");
+    }
+
+    User owner = userRepository.findById(ownerId)
+        .orElseThrow(() -> new RuntimeException("Owner not found"));
+
+    Organization organization = organizationRepository.findById(request.getOrganizationId())
+        .orElseThrow(() -> new RuntimeException("Organization not found"));
+
+    SharingPermission sharingPermission = sharingPermissionRepository
+        .findByOwnerAndSharedWithOrganizationAndPermissionType(
+            owner, organization, request.getPermissionType())
+        .orElseThrow(() -> new RuntimeException("Sharing permission not found"));
+
+    sharingPermissionRepository.delete(sharingPermission);
+  }
+
+  private String getCurrentUserId() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    return authentication.getName();
   }
 }

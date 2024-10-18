@@ -39,16 +39,13 @@ public class PrescriptionService {
 
   @Transactional(readOnly = true)
   public List<Prescription> getPrescriptionsByUserId(String userId) {
-    User user = userRepository.findById(userId)
-        .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+    List<Prescription> prescriptions = prescriptionRepository.findByUserId(userId);
 
-    List<Prescription> prescriptions = prescriptionRepository.findByUser(user);
-
+    // Filter prescriptions based on access permissions
     return prescriptions.stream()
         .filter(authorizationService::canAccessPrescription)
         .collect(Collectors.toList());
   }
-
 
   @Transactional
   public Prescription createPrescription(String userId, Prescription prescription) {
@@ -64,16 +61,10 @@ public class PrescriptionService {
     return prescriptionRepository.save(prescription);
   }
 
-
   @Transactional
   public Prescription updatePrescription(String userId, String prescriptionId, Prescription updatedPrescription) {
     Prescription existingPrescription = prescriptionRepository.findById(prescriptionId)
         .orElseThrow(() -> new RuntimeException("Prescription not found with id: " + prescriptionId));
-
-    // Verify that the prescription belongs to the specified user
-    if (!existingPrescription.getUser().getId().equals(userId)) {
-      throw new AccessDeniedException("Prescription does not belong to the specified user");
-    }
 
     if (!authorizationService.canModifyPrescription(existingPrescription)) {
       throw new AccessDeniedException("You don't have permission to modify this prescription");
@@ -94,16 +85,10 @@ public class PrescriptionService {
     Prescription prescription = prescriptionRepository.findById(prescriptionId)
         .orElseThrow(() -> new RuntimeException("Prescription not found with id: " + prescriptionId));
 
-    // Verify that the prescription belongs to the specified user
-    if (!prescription.getUser().getId().equals(userId)) {
-      throw new AccessDeniedException("Prescription does not belong to the specified user");
-    }
-
     if (!authorizationService.canModifyPrescription(prescription)) {
       throw new AccessDeniedException("You don't have permission to delete this prescription");
     }
 
     prescriptionRepository.delete(prescription);
   }
-
 }

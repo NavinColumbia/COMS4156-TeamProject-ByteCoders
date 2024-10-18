@@ -36,6 +36,10 @@ public class SharingPermission {
   @JoinColumn(name = "shared_with_org_id")
   private Organization sharedWithOrganization;
 
+  @Column(name = "status", nullable = false)
+  @Enumerated(EnumType.STRING)
+  private SharingPermissionStatus status;
+
   @Column(name = "permission_type", nullable = false)
   @Enumerated(EnumType.STRING)
   private PermissionType permissionType;
@@ -67,4 +71,13 @@ public class SharingPermission {
 
   public Date getExpiresAt() { return expiresAt; }
   public void setExpiresAt(Date expiresAt) { this.expiresAt = expiresAt; }
+
+
+  public SharingPermissionStatus getStatus() {
+    return status;
+  }
+
+  public void setStatus(SharingPermissionStatus status) {
+    this.status = status;
+  }
 }

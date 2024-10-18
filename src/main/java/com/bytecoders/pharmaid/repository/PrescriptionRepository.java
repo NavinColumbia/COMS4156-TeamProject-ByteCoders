@@ -14,5 +14,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface PrescriptionRepository extends JpaRepository<Prescription, String> {
-  List<Prescription> findByUser(User user);
+  //List<Prescription> findByUser(User user);
+  // Method to find prescriptions by User ID
+  List<Prescription> findByUserId(String userId);
 }

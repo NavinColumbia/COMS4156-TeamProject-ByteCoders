@@ -1,6 +1,6 @@
 package com.bytecoders.pharmaid.repository.model;
 
-public enum PermissionStatus {
+public enum SharingPermissionStatus {
   PENDING,
   ACCEPTED,
   DENIED,
