@@ -4,6 +4,7 @@ import com.bytecoders.pharmaid.repository.model.OrganizationPermissionRequest;
 import com.bytecoders.pharmaid.repository.model.SharingRequest;
 import com.bytecoders.pharmaid.repository.model.User;
 import com.bytecoders.pharmaid.repository.model.Prescription;
+import com.bytecoders.pharmaid.security.CustomUserDetails;
 import com.bytecoders.pharmaid.service.UserService;
 import com.bytecoders.pharmaid.service.PrescriptionService;
 import com.bytecoders.pharmaid.service.SharingPermissionService;
@@ -207,6 +208,11 @@ public class UserController {
 
   private String getCurrentUserId() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    return authentication.getName();
+    if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails) {
+      CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+      return userDetails.getUser().getId(); // Return the user ID
+    }
+    return null; // Or throw an exception if appropriate
   }
+
 }

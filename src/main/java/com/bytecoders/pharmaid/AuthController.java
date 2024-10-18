@@ -47,7 +47,7 @@ public class AuthController {
   @Autowired
   private JwtTokenProvider tokenProvider;
 
-  @PostMapping("/api/auth/login")
+  @PostMapping("/login")
   public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
     Authentication authentication = authenticationManager.authenticate(
         new UsernamePasswordAuthenticationToken(
@@ -61,7 +61,7 @@ public class AuthController {
     return ResponseEntity.ok(new AuthResponse(jwt));
   }
 
-  @PostMapping("/api/auth/register")
+  @PostMapping("/register")
   public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
     if (userService.existsByEmail(registerRequest.getEmail())) {
       return ResponseEntity.badRequest().body("Error: Email is already in use!");

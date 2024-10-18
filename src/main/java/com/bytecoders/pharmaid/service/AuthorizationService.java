@@ -6,6 +6,7 @@ import com.bytecoders.pharmaid.repository.model.SharingPermissionStatus;
 import com.bytecoders.pharmaid.repository.model.User;
 import com.bytecoders.pharmaid.repository.UserRepository;
 import com.bytecoders.pharmaid.repository.SharingPermissionRepository;
+import com.bytecoders.pharmaid.security.CustomUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -119,6 +120,11 @@ public class AuthorizationService {
 
   private String getCurrentUserId() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    return authentication.getName();
+    if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails) {
+      CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+      return userDetails.getUser().getId();
+    }
+    return null;
   }
+
 }

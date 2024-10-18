@@ -3,11 +3,20 @@ package com.bytecoders.pharmaid.security;
 
 import com.bytecoders.pharmaid.repository.model.User;
 import io.jsonwebtoken.*;
+import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import java.nio.charset.StandardCharsets;
+import java.security.Key;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
+
+import io.jsonwebtoken.security.Keys;
+import java.nio.charset.StandardCharsets;
+import java.security.Key;
+import jakarta.annotation.PostConstruct;
 
 @Component
 public class JwtTokenProvider {
@@ -18,9 +27,20 @@ public class JwtTokenProvider {
   @Value("${app.jwtExpirationInMs}")
   private int jwtExpirationInMs;
 
+  private Key key;
+
+  @PostConstruct
+  public void init() {
+    this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+  }
+
   public String generateToken(Authentication authentication) {
-    User userPrincipal = (User) authentication.getPrincipal();
-    return generateToken(userPrincipal);
+
+    CustomUserDetails userPrincipal = (CustomUserDetails) authentication.getPrincipal();
+    User user = userPrincipal.getUser(); // Get the User object
+    return generateToken(user);
+
+
   }
 
   public String generateToken(User user) {
@@ -31,15 +51,17 @@ public class JwtTokenProvider {
         .setSubject(user.getId())
         .claim("email", user.getEmail())
         .claim("userType", user.getUserType().getName())
-        .setIssuedAt(new Date())
+        .setIssuedAt(now)
         .setExpiration(expiryDate)
-        .signWith(SignatureAlgorithm.HS512, jwtSecret)
+        .signWith(key, SignatureAlgorithm.HS512)
         .compact();
   }
 
+
   public String getUserIdFromJWT(String token) {
-    Claims claims = Jwts.parser()
-        .setSigningKey(jwtSecret)
+    Claims claims = Jwts.parserBuilder()
+        .setSigningKey(key)
+        .build()
         .parseClaimsJws(token)
         .getBody();
 
@@ -48,19 +70,17 @@ public class JwtTokenProvider {
 
   public boolean validateToken(String authToken) {
     try {
-      Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(authToken);
+      Jwts.parserBuilder()
+          .setSigningKey(key)
+          .build()
+          .parseClaimsJws(authToken);
       return true;
-    } catch (SignatureException ex) {
-      // Log error about invalid JWT signature
-    } catch (MalformedJwtException ex) {
-      // Log error about invalid JWT token
-    } catch (ExpiredJwtException ex) {
-      // Log error about expired JWT token
-    } catch (UnsupportedJwtException ex) {
-      // Log error about unsupported JWT token
-    } catch (IllegalArgumentException ex) {
-      // Log error about invalid token
+    } catch (JwtException ex) {
+      // Log the specific exception and return false
+      // For example:
+      //logger.error("Invalid JWT token: {}", ex.getMessage());
     }
     return false;
   }
+
 }

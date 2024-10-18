@@ -1,5 +1,6 @@
 package com.bytecoders.pharmaid.service;
 
+import com.bytecoders.pharmaid.PharmaidApplication;
 import com.bytecoders.pharmaid.repository.OrganizationRepository;
 import com.bytecoders.pharmaid.repository.SharingPermissionRepository;
 import com.bytecoders.pharmaid.repository.UserRepository;
@@ -9,15 +10,20 @@ import com.bytecoders.pharmaid.repository.model.SharingPermission;
 import com.bytecoders.pharmaid.repository.model.SharingPermissionStatus;
 import com.bytecoders.pharmaid.repository.model.SharingRequest;
 import com.bytecoders.pharmaid.repository.model.User;
+import com.bytecoders.pharmaid.security.CustomUserDetails;
+
 import java.util.Date;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 @Service
 public class SharingPermissionService {
+  //private static final Logger logger = LogManager.getLogger(SharingPermissionService.class);
 
   @Autowired
   private SharingPermissionRepository sharingPermissionRepository;
@@ -29,6 +35,8 @@ public class SharingPermissionService {
   private OrganizationRepository organizationRepository;
 
   public String createSharingRequest(String ownerId, SharingRequest request) {
+
+
     User owner = userRepository.findById(ownerId)
         .orElseThrow(() -> new RuntimeException("Owner not found"));
 
@@ -148,6 +156,15 @@ public class SharingPermissionService {
 
   private String getCurrentUserId() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    return authentication.getName();
+    if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails) {
+      CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+      String userId = userDetails.getUser().getId();
+     // logger.info("Current User ID: " + userId);
+      return userId;
+    }
+   // logger.warn("Authentication or Principal is null");
+    return null; // Or throw an exception if appropriate
   }
+
+
 }

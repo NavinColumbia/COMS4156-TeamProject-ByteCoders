@@ -1,7 +1,9 @@
 package com.bytecoders.pharmaid.security;
 
 import com.bytecoders.pharmaid.repository.model.User;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.Collections;
@@ -20,7 +22,7 @@ public class CustomUserDetails implements UserDetails {
 
   @Override
   public String getUsername() {
-    return user.getId(); // Return user ID as username
+    return user.getEmail(); // Return email as username
   }
 
   @Override
@@ -38,5 +40,27 @@ public class CustomUserDetails implements UserDetails {
     return true;
   }
 
-  // Other methods...
+  @Override
+  public boolean isAccountNonLocked() {
+    return true;
+  }
+
+  @Override
+  public boolean isCredentialsNonExpired() {
+    return true;
+  }
+
+  @Override
+  public boolean isEnabled() {
+    return true;
+  }
+/*
+  private String getCurrentUserId() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails) {
+      CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+      return userDetails.getUser().getId(); // Return the user ID
+    }
+    return null; // Or throw an exception if appropriate
+  }*/
 }
