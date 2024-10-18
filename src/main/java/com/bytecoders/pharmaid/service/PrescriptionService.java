@@ -2,6 +2,8 @@ package com.bytecoders.pharmaid.service;
 
 import com.bytecoders.pharmaid.repository.PrescriptionRepository;
 import com.bytecoders.pharmaid.repository.model.Prescription;
+
+import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -43,5 +45,10 @@ public class PrescriptionService {
    */
   public void deletePrescription(String prescriptionId) {
     prescriptionRepository.deleteById(prescriptionId);
+  }
+
+
+  public List<Prescription> getPrescriptionsForUser(String userId) {
+    return prescriptionRepository.findAllByUserId(userId);
   }
 }
