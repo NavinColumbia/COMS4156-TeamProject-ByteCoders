@@ -25,7 +25,7 @@ public class AuthorizationService {
   private SharingPermissionRepository sharingPermissionRepository;
 
   public boolean canAccessUserRecords(String currentUserId, String targetUserId) {
-    // Users can always access their own records
+
     if (currentUserId.equals(targetUserId)) {
       return true;
     }
@@ -36,9 +36,9 @@ public class AuthorizationService {
     User targetUser = userRepository.findById(targetUserId)
         .orElseThrow(() -> new RuntimeException("Target user not found"));
 
-    List<PermissionType> allowedPermissions = Arrays.asList(PermissionType.VIEW, PermissionType.EDIT);
+    List<PermissionType> allowedPermissions = Arrays.asList(PermissionType.VIEW,
+        PermissionType.EDIT);
 
-    // Check user-specific permissions
     boolean hasUserPermission = sharingPermissionRepository.existsByOwnerAndSharedWithUserAndPermissionTypeInAndStatus(
         targetUser, currentUser, allowedPermissions, SharingPermissionStatus.ACCEPTED);
 
@@ -46,22 +46,10 @@ public class AuthorizationService {
       return true;
     }
 
-    // Check organization-based permissions
-    if (currentUser.getOrganization() != null) {
-      boolean hasOrgPermission = sharingPermissionRepository.existsByOwnerAndSharedWithOrganizationAndPermissionTypeInAndStatus(
-          targetUser, currentUser.getOrganization(), allowedPermissions, SharingPermissionStatus.ACCEPTED);
-
-      if (hasOrgPermission) {
-        return true;
-      }
-    }
-
-    // No permissions found
     return false;
   }
 
   public boolean canModifyUserRecords(String currentUserId, String targetUserId) {
-    // Users can always modify their own records
     if (currentUserId.equals(targetUserId)) {
       return true;
     }
@@ -74,7 +62,6 @@ public class AuthorizationService {
 
     PermissionType requiredPermission = PermissionType.EDIT;
 
-    // Check user-specific permissions
     boolean hasUserPermission = sharingPermissionRepository.existsByOwnerAndSharedWithUserAndPermissionTypeAndStatus(
         targetUser, currentUser, requiredPermission, SharingPermissionStatus.ACCEPTED);
 
@@ -82,24 +69,12 @@ public class AuthorizationService {
       return true;
     }
 
-    // Check organization-based permissions
-    if (currentUser.getOrganization() != null) {
-      boolean hasOrgPermission = sharingPermissionRepository.existsByOwnerAndSharedWithOrganizationAndPermissionTypeAndStatus(
-          targetUser, currentUser.getOrganization(), requiredPermission, SharingPermissionStatus.ACCEPTED);
-
-      if (hasOrgPermission) {
-        return true;
-      }
-    }
-
-    // No permissions found
     return false;
   }
 
   public boolean canAccessPrescription(Prescription prescription) {
     String currentUserId = getCurrentUserId();
 
-    // The owner can always access their prescriptions
     if (currentUserId.equals(prescription.getUser().getId())) {
       return true;
     }
@@ -110,7 +85,6 @@ public class AuthorizationService {
   public boolean canModifyPrescription(Prescription prescription) {
     String currentUserId = getCurrentUserId();
 
-    // The owner can always modify their prescriptions
     if (currentUserId.equals(prescription.getUser().getId())) {
       return true;
     }

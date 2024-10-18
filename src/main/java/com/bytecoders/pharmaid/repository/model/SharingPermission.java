@@ -20,6 +20,7 @@ import org.hibernate.annotations.UuidGenerator;
 @Entity
 @Table(name = "sharing_permissions")
 public class SharingPermission {
+
   @Id
   @UuidGenerator
   private String id;
@@ -32,9 +33,6 @@ public class SharingPermission {
   @JoinColumn(name = "shared_with_user_id")
   private User sharedWithUser;
 
-  @ManyToOne
-  @JoinColumn(name = "shared_with_org_id")
-  private Organization sharedWithOrganization;
 
   @Column(name = "status", nullable = false)
   @Enumerated(EnumType.STRING)
@@ -51,26 +49,53 @@ public class SharingPermission {
   private Date expiresAt;
 
   // Getters and setters
-  public String getId() { return id; }
-  public void setId(String id) { this.id = id; }
+  public String getId() {
+    return id;
+  }
 
-  public User getOwner() { return owner; }
-  public void setOwner(User owner) { this.owner = owner; }
+  public void setId(String id) {
+    this.id = id;
+  }
 
-  public User getSharedWithUser() { return sharedWithUser; }
-  public void setSharedWithUser(User sharedWithUser) { this.sharedWithUser = sharedWithUser; }
+  public User getOwner() {
+    return owner;
+  }
 
-  public Organization getSharedWithOrganization() { return sharedWithOrganization; }
-  public void setSharedWithOrganization(Organization sharedWithOrganization) { this.sharedWithOrganization = sharedWithOrganization; }
+  public void setOwner(User owner) {
+    this.owner = owner;
+  }
 
-  public PermissionType getPermissionType() { return permissionType; }
-  public void setPermissionType(PermissionType permissionType) { this.permissionType = permissionType; }
+  public User getSharedWithUser() {
+    return sharedWithUser;
+  }
 
-  public Date getCreatedAt() { return createdAt; }
-  public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
+  public void setSharedWithUser(User sharedWithUser) {
+    this.sharedWithUser = sharedWithUser;
+  }
 
-  public Date getExpiresAt() { return expiresAt; }
-  public void setExpiresAt(Date expiresAt) { this.expiresAt = expiresAt; }
+  public PermissionType getPermissionType() {
+    return permissionType;
+  }
+
+  public void setPermissionType(PermissionType permissionType) {
+    this.permissionType = permissionType;
+  }
+
+  public Date getCreatedAt() {
+    return createdAt;
+  }
+
+  public void setCreatedAt(Date createdAt) {
+    this.createdAt = createdAt;
+  }
+
+  public Date getExpiresAt() {
+    return expiresAt;
+  }
+
+  public void setExpiresAt(Date expiresAt) {
+    this.expiresAt = expiresAt;
+  }
 
 
   public SharingPermissionStatus getStatus() {

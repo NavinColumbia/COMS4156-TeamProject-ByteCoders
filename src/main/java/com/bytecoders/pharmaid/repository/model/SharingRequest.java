@@ -3,6 +3,7 @@ package com.bytecoders.pharmaid.repository.model;
 import jakarta.validation.constraints.NotNull;
 
 public class SharingRequest {
+
   @NotNull
   private PermissionType permissionType;
 

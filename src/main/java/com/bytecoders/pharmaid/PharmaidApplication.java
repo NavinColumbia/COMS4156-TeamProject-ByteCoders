@@ -5,7 +5,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
  * Class contains all the startup logic for the application.
- *
  */
 @SpringBootApplication
 public class PharmaidApplication {

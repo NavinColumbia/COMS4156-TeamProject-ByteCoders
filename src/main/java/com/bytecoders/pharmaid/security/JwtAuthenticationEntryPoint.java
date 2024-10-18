@@ -21,11 +21,8 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint, Se
       AuthenticationException authException)
       throws IOException, ServletException {
 
-    // Log the error
-    // In a production environment, use a proper logging framework
     System.err.println("Unauthorized error: " + authException.getMessage());
 
-    // You can customize the error message and response as needed
     response.setContentType("application/json");
     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
     response.getOutputStream().println("{ \"error\": \"" + authException.getMessage() + "\" }");

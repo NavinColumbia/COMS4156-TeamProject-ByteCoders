@@ -4,5 +4,5 @@ public enum SharingPermissionStatus {
   PENDING,
   ACCEPTED,
   DENIED,
-  REVOKED
+
 }

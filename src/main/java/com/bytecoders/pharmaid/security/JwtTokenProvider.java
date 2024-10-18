@@ -13,10 +13,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.Date;
 
-import io.jsonwebtoken.security.Keys;
-import java.nio.charset.StandardCharsets;
-import java.security.Key;
-import jakarta.annotation.PostConstruct;
 
 @Component
 public class JwtTokenProvider {
@@ -50,7 +46,6 @@ public class JwtTokenProvider {
     return Jwts.builder()
         .setSubject(user.getId())
         .claim("email", user.getEmail())
-        .claim("userType", user.getUserType().getName())
         .setIssuedAt(now)
         .setExpiration(expiryDate)
         .signWith(key, SignatureAlgorithm.HS512)
@@ -76,9 +71,7 @@ public class JwtTokenProvider {
           .parseClaimsJws(authToken);
       return true;
     } catch (JwtException ex) {
-      // Log the specific exception and return false
-      // For example:
-      //logger.error("Invalid JWT token: {}", ex.getMessage());
+      //logger?
     }
     return false;
   }

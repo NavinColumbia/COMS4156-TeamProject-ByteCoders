@@ -32,7 +32,7 @@ public class CustomUserDetails implements UserDetails {
 
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
-    return Collections.singleton(() -> "ROLE_" + user.getUserType().getName().toUpperCase());
+    return Collections.singleton(() -> "ROLE_USER");
   }
 
   @Override
@@ -54,13 +54,5 @@ public class CustomUserDetails implements UserDetails {
   public boolean isEnabled() {
     return true;
   }
-/*
-  private String getCurrentUserId() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails) {
-      CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-      return userDetails.getUser().getId(); // Return the user ID
-    }
-    return null; // Or throw an exception if appropriate
-  }*/
+
 }

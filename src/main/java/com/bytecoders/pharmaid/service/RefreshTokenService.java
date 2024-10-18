@@ -15,6 +15,7 @@ import java.util.UUID;
 
 @Service
 public class RefreshTokenService {
+
   @Value("${pharmaid.app.jwtRefreshExpirationMs}")
   private Long refreshTokenDurationMs;
 

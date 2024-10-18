@@ -1,6 +1,5 @@
 package com.bytecoders.pharmaid;
 
-import com.bytecoders.pharmaid.repository.model.OrganizationPermissionRequest;
 import com.bytecoders.pharmaid.repository.model.SharingRequest;
 import com.bytecoders.pharmaid.repository.model.User;
 import com.bytecoders.pharmaid.repository.model.Prescription;
@@ -50,7 +49,8 @@ public class UserController {
   }
 
   @PatchMapping("/{user_id}")
-  public ResponseEntity<User> updateUserAccount(@PathVariable("user_id") String userId, @RequestBody User user) {
+  public ResponseEntity<User> updateUserAccount(@PathVariable("user_id") String userId,
+      @RequestBody User user) {
     String currentUserId = getCurrentUserId();
 
     if (!currentUserId.equals(userId)) {
@@ -74,7 +74,8 @@ public class UserController {
   }
 
   @GetMapping("/{user_id}/records")
-  public ResponseEntity<List<Prescription>> getUserHealthRecords(@PathVariable("user_id") String userId) {
+  public ResponseEntity<List<Prescription>> getUserHealthRecords(
+      @PathVariable("user_id") String userId) {
     String currentUserId = getCurrentUserId();
 
     if (!authorizationService.canAccessUserRecords(currentUserId, userId)) {
@@ -110,7 +111,8 @@ public class UserController {
       throw new AccessDeniedException("You are not authorized to modify this prescription.");
     }
 
-    Prescription updatedPrescription = prescriptionService.updatePrescription(userId, prescriptionId, prescription);
+    Prescription updatedPrescription = prescriptionService.updatePrescription(userId,
+        prescriptionId, prescription);
     return ResponseEntity.ok(updatedPrescription);
   }
 
@@ -178,33 +180,6 @@ public class UserController {
     return ResponseEntity.ok().build();
   }
 
-  @PostMapping("/{user_id}/permissions/organizations")
-  public ResponseEntity<?> grantPermissionToOrganization(
-      @PathVariable("user_id") String userId,
-      @Valid @RequestBody OrganizationPermissionRequest request) {
-    String currentUserId = getCurrentUserId();
-
-    if (!currentUserId.equals(userId)) {
-      throw new AccessDeniedException("You are not authorized to grant permissions for this user.");
-    }
-
-    sharingPermissionService.grantPermissionToOrganization(userId, request);
-    return ResponseEntity.ok().build();
-  }
-
-  @DeleteMapping("/{user_id}/permissions/organizations")
-  public ResponseEntity<?> revokePermissionFromOrganization(
-      @PathVariable("user_id") String userId,
-      @Valid @RequestBody OrganizationPermissionRequest request) {
-    String currentUserId = getCurrentUserId();
-
-    if (!currentUserId.equals(userId)) {
-      throw new AccessDeniedException("You are not authorized to revoke permissions for this user.");
-    }
-
-    sharingPermissionService.revokePermissionFromOrganization(userId, request);
-    return ResponseEntity.ok().build();
-  }
 
   private String getCurrentUserId() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

@@ -28,7 +28,8 @@ public class PrescriptionService {
   @Transactional(readOnly = true)
   public Prescription getPrescriptionById(String prescriptionId) {
     Prescription prescription = prescriptionRepository.findById(prescriptionId)
-        .orElseThrow(() -> new RuntimeException("Prescription not found with id: " + prescriptionId));
+        .orElseThrow(
+            () -> new RuntimeException("Prescription not found with id: " + prescriptionId));
 
     if (!authorizationService.canAccessPrescription(prescription)) {
       throw new AccessDeniedException("You don't have permission to access this prescription");
@@ -41,7 +42,6 @@ public class PrescriptionService {
   public List<Prescription> getPrescriptionsByUserId(String userId) {
     List<Prescription> prescriptions = prescriptionRepository.findByUserId(userId);
 
-    // Filter prescriptions based on access permissions
     return prescriptions.stream()
         .filter(authorizationService::canAccessPrescription)
         .collect(Collectors.toList());
@@ -55,22 +55,24 @@ public class PrescriptionService {
     prescription.setUser(user);
 
     if (!authorizationService.canModifyPrescription(prescription)) {
-      throw new AccessDeniedException("You don't have permission to create a prescription for this user");
+      throw new AccessDeniedException(
+          "You don't have permission to create a prescription for this user");
     }
 
     return prescriptionRepository.save(prescription);
   }
 
   @Transactional
-  public Prescription updatePrescription(String userId, String prescriptionId, Prescription updatedPrescription) {
+  public Prescription updatePrescription(String userId, String prescriptionId,
+      Prescription updatedPrescription) {
     Prescription existingPrescription = prescriptionRepository.findById(prescriptionId)
-        .orElseThrow(() -> new RuntimeException("Prescription not found with id: " + prescriptionId));
+        .orElseThrow(
+            () -> new RuntimeException("Prescription not found with id: " + prescriptionId));
 
     if (!authorizationService.canModifyPrescription(existingPrescription)) {
       throw new AccessDeniedException("You don't have permission to modify this prescription");
     }
 
-    // Update fields
     existingPrescription.setMedicationName(updatedPrescription.getMedicationName());
     existingPrescription.setDosage(updatedPrescription.getDosage());
     existingPrescription.setFrequency(updatedPrescription.getFrequency());
@@ -83,7 +85,8 @@ public class PrescriptionService {
   @Transactional
   public void deletePrescription(String userId, String prescriptionId) {
     Prescription prescription = prescriptionRepository.findById(prescriptionId)
-        .orElseThrow(() -> new RuntimeException("Prescription not found with id: " + prescriptionId));
+        .orElseThrow(
+            () -> new RuntimeException("Prescription not found with id: " + prescriptionId));
 
     if (!authorizationService.canModifyPrescription(prescription)) {
       throw new AccessDeniedException("You don't have permission to delete this prescription");

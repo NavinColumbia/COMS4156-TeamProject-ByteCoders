@@ -2,9 +2,7 @@ package com.bytecoders.pharmaid.service;
 
 import com.bytecoders.pharmaid.repository.UserRepository;
 import com.bytecoders.pharmaid.repository.model.User;
-import com.bytecoders.pharmaid.request.LoginUserRequest;
-import com.bytecoders.pharmaid.request.RegisterUserRequest;
-import com.bytecoders.pharmaid.util.PasswordUtils;
+
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,8 +21,6 @@ public class UserService {
     return userRepository.findById(userId)
         .map(user -> {
           user.setEmail(updatedUser.getEmail());
-          user.setOrganization(updatedUser.getOrganization());
-          user.setUserType(updatedUser.getUserType());
           return userRepository.save(user);
         })
         .orElseThrow(() -> new RuntimeException("User not found"));

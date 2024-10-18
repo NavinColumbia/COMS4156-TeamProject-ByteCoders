@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class AuthService {
+
   @Autowired
   private UserRepository userRepository;
 
@@ -27,21 +28,13 @@ public class AuthService {
     User requester = userRepository.findById(requesterId)
         .orElseThrow(() -> new RuntimeException("Requester not found"));
 
-    if (requester.getUserType().isCanAccessAllRecords()) {
-      return true;
-    }
-
     User owner = userRepository.findById(ownerId)
         .orElseThrow(() -> new RuntimeException("Owner not found"));
 
-    Optional<SharingPermission> permission = sharingPermissionRepository.findByOwnerAndSharedWithUser(owner, requester);
+    Optional<SharingPermission> permission = sharingPermissionRepository.findByOwnerAndSharedWithUser(
+        owner, requester);
     if (permission.isPresent()) {
       return true;
-    }
-
-    if (requester.getOrganization() != null) {
-      Optional<SharingPermission> orgPermission = sharingPermissionRepository.findByOwnerAndSharedWithOrganization(owner, requester.getOrganization());
-      return orgPermission.isPresent();
     }
 
     return false;
