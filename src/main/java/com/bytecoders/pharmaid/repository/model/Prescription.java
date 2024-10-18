@@ -32,7 +32,7 @@ public class Prescription {
   @ManyToOne
   @JoinColumn(name = "medication_id", nullable = false)
   @JsonProperty
-  private Medication medicationId;
+  private Medication medication;
 
   @Column(name = "dosage", nullable = false)
   @JsonProperty
