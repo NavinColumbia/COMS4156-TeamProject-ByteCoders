@@ -17,6 +17,9 @@ public class UserService {
   @Autowired
   private UserRepository userRepository;
 
+  @Autowired
+  private PasswordUtils passwordUtils;
+
   /**
    * Register new user service.
    *
@@ -26,7 +29,7 @@ public class UserService {
   public User registerUser(RegisterUserRequest registerUserRequest) {
     final User newUser = new User();
     newUser.setEmail(registerUserRequest.getEmail());
-    newUser.setHashedPassword(PasswordUtils.hashPassword(registerUserRequest.getPassword()));
+    newUser.setHashedPassword(passwordUtils.hashPassword(registerUserRequest.getPassword()));
     return userRepository.save(newUser);
   }
 
@@ -43,7 +46,7 @@ public class UserService {
       return Optional.empty();
     }
 
-    final boolean isCorrectPassword = PasswordUtils.verifyPassword(
+    final boolean isCorrectPassword = passwordUtils.verifyPassword(
         loginUserRequest.getPassword(), userWithEmail.get().getHashedPassword());
 
     return isCorrectPassword ? userWithEmail : Optional.empty();
