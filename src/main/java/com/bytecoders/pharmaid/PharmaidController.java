@@ -81,4 +81,6 @@ public class PharmaidController {
           "Unexpected error encountered during login", HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+
+
 }
