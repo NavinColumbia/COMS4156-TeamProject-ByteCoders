@@ -1,7 +1,7 @@
 package com.bytecoders.pharmaid.repository;
 
 import com.bytecoders.pharmaid.repository.model.Prescription;
-import java.util.Optional;
+import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
@@ -9,5 +9,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
  */
 public interface PrescriptionRepository extends JpaRepository<Prescription, String> {
 
-  Optional<Prescription> findByUserId(String userId);
+  List<Prescription> findAllByUserId(String userId);
 }
