@@ -9,7 +9,6 @@ import com.bytecoders.pharmaid.request.RegisterUserRequest;
 import com.bytecoders.pharmaid.service.MedicationService;
 import com.bytecoders.pharmaid.service.PrescriptionService;
 import com.bytecoders.pharmaid.service.UserService;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import java.util.List;
