@@ -121,7 +121,7 @@ As part of `mvn clean verify` , tests under ./src/test/java must have been execu
 ### Test Reports
 From the previously run `mvn clean verify`, find '.txt' files under './target/surefire-reports/' to view test results <br/>
 Or you can run mvn clean test and view console output <br />
-![All tests ran successfully](https://dl.dropbox.com/scl/fi/3edd1mr4axj33al47mvjx/tests.png?rlkey=ucqo7kama387f0dzzihrklxm1&st=9sj7fo6m&dl=0)
+![All tests ran successfully](https://dl.dropbox.com/scl/fi/e86n0krsbt47rapbirvre/tests_pass.png?rlkey=br2zkd43adfuq2910nvrvbd92&st=4rrf5jf5&dl=0)
 &nbsp;
 
 ### Jacoco Report
