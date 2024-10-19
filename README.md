@@ -290,3 +290,6 @@ Open with any browser to view jacoco results
     - 404 Not Found: `"Provided User doesn't exist"`
     - 500 Internal Server Error: `"Unexpected error encountered while getting user prescriptions"`
 
+# Jira Board
+
+https://bytecoders-4156.atlassian.net/jira/software/projects/BYT/boards/1
