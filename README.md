@@ -98,21 +98,6 @@ mvn checkstyle:check
 Check console output for errors/warnings/violations.
 ![current checkstyle reports 0 violation](https://dl.dropbox.com/scl/fi/3xpqsf94i3vqgbj7rti9l/checkstyle_check.png?rlkey=1f60qzif8wviopr23xcl0352y&st=dc2m561y&dl=0)
 
-# Static Code Analysis
-PMD(mentioned in assignment) was the static analyzer used.
-&nbsp;
-
-&emsp;Running PMD:
-
-```
-    pmd check -d src/main/java -R rulesets/java/quickstart.xml -f text -r "pmdres.txt"
-    pmd check -d src/main/java -R rulesets/java/quickstart.xml -f html -r "pmdres.html"
-```
-&emsp;&emsp;Find file named pmdres.html <br />
-&emsp;&emsp;Open the html with any browser or check 'pmdres.txt'.<br />
-&emsp;&emsp;An empty content in either of the file mean no further suggestions.
-![0 pmd violations](https://dl.dropbox.com/scl/fi/e1kre98pc1p709go58lry/pmd_check.png?rlkey=70tjnwck84jgpzntnnr6ooxsp&st=086skwc9&dl=0)
-
 # Running Tests and Jacoco Report
 As part of `mvn clean verify` , tests under ./src/test/java must have been executed.
 
