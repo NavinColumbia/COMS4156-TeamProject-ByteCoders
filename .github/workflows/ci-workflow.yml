@@ -34,23 +34,24 @@ jobs:
         run: |
           echo "$GITHUB_WORKSPACE"
 
-      - name: Debug environment
-        run: |
-          echo "Current environment: ${{ github.environment }}"
-          echo "All secrets context keys:"
-          echo "${{ toJson(secrets) }}" | jq 'keys'
+      #      - name: Debug environment
+      #        run: |
+      #          echo "Current environment: ${{ github.environment }}"
+      #          echo "All secrets context keys:"
+      #          echo "${{ toJson(secrets) }}" | jq 'keys'
 
       - name: Save service account key to file
         run: |
-          echo "${{ secrets.PHARMAID_GOOGLE_APPLICATION_CREDENTIALS }}" | base64 -d > $GITHUB_WORKSPACE/gcloud-key.json
+          echo "${{ secrets.PHARMAID_GOOGLE_APPLICATION_CREDENTIALS }}" | base64 -d > 
+          $GITHUB_WORKSPACE/src/main/resources/bytecoders-coms4156-key.json
 
       - name: Authenticate with GCP
-        run: gcloud auth activate-service-account --key-file=$HOME/gcloud-key.json
+        run: gcloud auth activate-service-account --key-file=$GITHUB_WORKSPACE/src/main/resources/bytecoders-coms4156-key.json
 
-      - name: Print env vars
-        run: |
-          echo "DB_PASS: $PHARMAID_DB_PASS"
-          echo "DB_NAME: $PHARMAID_DB_NAME"
+      #      - name: Print env vars
+      #        run: |
+      #          echo "DB_PASS: $PHARMAID_DB_PASS"
+      #          echo "DB_NAME: $PHARMAID_DB_NAME"
 
       #      - name: Set up Database Environment Variables
       #        run: |
