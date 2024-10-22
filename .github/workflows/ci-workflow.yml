@@ -9,8 +9,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-20.04
+
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -24,10 +26,14 @@ jobs:
           project_id: ${{ secrets.PHARMAID_GCP_PROJECT_ID }}
           service_account_key: ${{ secrets.PHARMAID_GOOGLE_APPLICATION_CREDENTIALS }}
 
+      # Save the service account key to a file
+      - name: Save service account key to file
+        run: |
+          echo "${{ secrets.PHARMAID_GOOGLE_APPLICATION_CREDENTIALS }}" > $HOME/gcloud-key.json
+
+      # Authenticate with GCP using the key file
       - name: Authenticate with GCP
-        run: gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.PHARMAID_GOOGLE_APPLICATION_CREDENTIALS }}
+        run: gcloud auth activate-service-account --key-file=$HOME/gcloud-key.json
 
       - name: Set up Database Environment Variables
         run: |
