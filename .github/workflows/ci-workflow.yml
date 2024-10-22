@@ -9,7 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-20.04
-
+    environment: 'google_cloud'
     steps:
       - uses: actions/checkout@v4
 
@@ -20,9 +20,9 @@ jobs:
           distribution: 'oracle'
           cache: maven
 
-      - name: Print env vars
+      - name: Print file
         run: |
-          echo ${{ secrets.PHARMAID_GOOGLE_APPLICATION_CREDENTIALS }}
+          echo "${{ secrets.PHARMAID_GOOGLE_APPLICATION_CREDENTIALS }}"
 
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
@@ -30,12 +30,10 @@ jobs:
           project_id: ${{ secrets.PHARMAID_GCP_PROJECT_ID }}
           service_account_key: ${{ secrets.PHARMAID_GOOGLE_APPLICATION_CREDENTIALS }}
 
-      # Save the service account key to a file
       - name: Save service account key to file
         run: |
           echo "${{ secrets.PHARMAID_GOOGLE_APPLICATION_CREDENTIALS }}" > $HOME/gcloud-key.json
 
-      # Authenticate with GCP using the key file
       - name: Authenticate with GCP
         run: gcloud auth activate-service-account --key-file=$HOME/gcloud-key.json
 
