@@ -37,12 +37,17 @@ jobs:
       - name: Authenticate with GCP
         run: gcloud auth activate-service-account --key-file=$HOME/gcloud-key.json
 
-      - name: Set up Database Environment Variables
+      - name: Print env vars
         run: |
-          echo "PHARMAID_DB_NAME=${{ secrets.PHARMAID_DB_NAME }}" >> $GITHUB_ENV
-          echo "PHARMAID_DB_USER=${{ secrets.PHARMAID_DB_USER }}" >> $GITHUB_ENV
-          echo "PHARMAID_DB_PASS=${{ secrets.PHARMAID_DB_PASS }}" >> $GITHUB_ENV
-          echo "PHARMAID_DB_CLOUD_SQL_INSTANCE=${{ secrets.PHARMAID_DB_CLOUD_SQL_INSTANCE }}" >> $GITHUB_ENV
+          echo "DB_PASS: $PHARMAID_DB_PASS"
+          echo "DB_NAME: $PHARMAID_DB_NAME"
+
+      #      - name: Set up Database Environment Variables
+      #        run: |
+      #          echo "PHARMAID_DB_NAME=${{ secrets.PHARMAID_DB_NAME }}" >> $GITHUB_ENV
+      #          echo "PHARMAID_DB_USER=${{ secrets.PHARMAID_DB_USER }}" >> $GITHUB_ENV
+      #          echo "PHARMAID_DB_PASS=${{ secrets.PHARMAID_DB_PASS }}" >> $GITHUB_ENV
+      #          echo "PHARMAID_DB_CLOUD_SQL_INSTANCE=${{ secrets.PHARMAID_DB_CLOUD_SQL_INSTANCE }}" >> $GITHUB_ENV
 
       - name: Build and Test
         run: mvn clean install
