@@ -42,8 +42,7 @@ jobs:
 
       - name: Save service account key to file
         run: |
-          echo "${{ secrets.PHARMAID_GOOGLE_APPLICATION_CREDENTIALS }}" | base64 -d > 
-          $GITHUB_WORKSPACE/src/main/resources/bytecoders-coms4156-key.json
+          echo "${{ secrets.PHARMAID_GOOGLE_APPLICATION_CREDENTIALS }}" | base64 -d > $GITHUB_WORKSPACE/src/main/resources/bytecoders-coms4156-key.json
 
       - name: Authenticate with GCP
         run: gcloud auth activate-service-account --key-file=$GITHUB_WORKSPACE/src/main/resources/bytecoders-coms4156-key.json
