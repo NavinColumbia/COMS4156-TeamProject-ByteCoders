@@ -32,7 +32,7 @@ jobs:
 
       - name: Save service account key to file
         run: |
-          echo "${{ secrets.PHARMAID_GOOGLE_APPLICATION_CREDENTIALS }}" > $HOME/gcloud-key.json
+          echo ${{ secrets.PHARMAID_GOOGLE_APPLICATION_CREDENTIALS }} | base64 -d > $HOME/gcloud-key.json
 
       - name: Authenticate with GCP
         run: gcloud auth activate-service-account --key-file=$HOME/gcloud-key.json
