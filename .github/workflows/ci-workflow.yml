@@ -18,10 +18,16 @@ jobs:
           distribution: 'oracle'
           cache: maven
 
-      - name: Set up Google Cloud Credentials
-        run: |
-          echo "${{ secrets.PHARMAID_GOOGLE_APPLICATION_CREDENTIALS }}" > $HOME/gcloud-key.json
-          echo "PHARMAID_GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json" >> $GITHUB_ENV
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ secrets.PHARMAID_GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.PHARMAID_GOOGLE_APPLICATION_CREDENTIALS }}
+
+      - name: Authenticate with GCP
+        run: gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.PHARMAID_GOOGLE_APPLICATION_CREDENTIALS }}
 
       - name: Set up Database Environment Variables
         run: |
