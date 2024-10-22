@@ -20,6 +20,10 @@ jobs:
           distribution: 'oracle'
           cache: maven
 
+      - name: Print env vars
+        run: |
+          echo ${{ secrets.PHARMAID_GOOGLE_APPLICATION_CREDENTIALS }}
+
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
         with:
