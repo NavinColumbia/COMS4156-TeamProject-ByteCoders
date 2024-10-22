@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "bytecoders-coms4156",
+  "private_key_id": "e61f408542f85c0a332fb760baadb99dad9cf39d",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDPo+2+xWPbjChe\nGvJM7TD7IpqL/kCe7VBI23DEwjNbDNam4Ds/9bxWW0BpOM0quYD06HIP4VgQH8Ck\njVF399ssmAion5ZD0yYF5YZJUzT/OW0jTQK9uA7/+7ayQgwiqIW9CpTV8nws4Wwv\nCIuWkHbtMJwIgfHb2QgP6MBbhQZDObHCIhKfhJ9ZEV4XbUhYOA7rTCDgEnBdEFpX\nBLijKrx6J8qZ+JWM/kAD38/5hPUq1c1GchTqL8efpoDwFO+kxFRCGkeyhsAdngq3\n9XBGw26aekmuSUsqvCZDj9icSGfJBAYqT5y/+Lgnmox8/9M9W718pBDuhmwUoS/0\nkWG2z9gDAgMBAAECggEAFsxqhyGi6xEda5EXh//GetnxUIFhtLGHjlWzMOob0Rmn\nRe+6lwq9xljtnmqzXZy8U+e5LRTdN6QCNxnMggN6aA/naiW0+OHUZnMDBsZhPCF2\nN26LaFZZ0JyMPPqzMhOr34urt5QQ3gKq/2e3n+1hHtOmsOkdAQ/NlVBFMqdNU+XC\nqfDJtL473egkBoJCk3sXlQwASoe3uRMwPG1a7pE/MgxdRIcgV3BRKGr4wDA/yEhP\n5zY6sCY1Fm9OodTW3cZvAJRfq5Wf2h3vt5p/sU+TOrTKLr4uUDBE4/OrYfiBPdPf\nZ5zSXtFS43smoVs79EUiDtng5QeJ7czGyIAKamiWFQKBgQDtvf3g8ZeA4YT+h9zC\nZnByd5xAyv8ZUjRNj6DqzTa9UBOF3vC66+mPgf1ZNrXdK1dbuuWsa4Gcp180DzCJ\nRQTKZu6dtJRRcqeHMMVbhl8GfevLWjprflFHZlrU9ix5TQYlrAJLShPu9depoxyu\nXvx/khuyGnPRQIOgj6cSctaf3QKBgQDfliK/faC6KTWbANKphJizpgY37LVKmSAz\n5w+tarJQVrCE/y44u1MOlIKTA7xE4dNzuexWPiAOc1QKROLJN9/chdPrHxx8TXz8\nU1DoRTTK4ndNQX4Bc6cdrwbxb1BhjKq7rzeTa27uvvq4C/0+8JuOM0Cp9OZkHL4n\nYKP6hN7JXwKBgGR3aIUZsyt8ogYqBemE/rnwv/BFmJ3rtjycmKUBCcPgxg9JkjN7\npFzH0vdTfnEzcpxKE+rUF5bKyBmo3Zr0tryN2QJ+IDt3F0KzIoO1+gw1RGLQA2YP\noGtq3rGmQk8UdKeQ0/tbF6dg7r06N9GcRFnotZmDQjRIbhd4/WJ3cyllAoGAO/ne\nIFfmwYlEY+v4lpiHDcm/aUkJ6JTi2olk3zP72Skn+MUq9PTq9sJHtIAQBLo/Ko/5\nIblQiA/Pv2FzJF7kohcUHcIetgljOZxv256U5seRERw8XM9VSNUmm6Usfr5pHieG\nVPlArLJ2NuCgcj3AvIhrFCwpkTlUmOOHmTADQykCgYEAz9rzN8esFOSSsbKOM4eB\nFcjVECZeoSpFGviET47mNCcNqRwkOxecJzYRqH19BJsa1g07xUL189m2DydJnXe9\nrBGFksSl53wJm/2Mxk2Vw0EthggWuQK0Mn0wpRYs1BYQuYSSHdatOvxo0e3d040l\n7nQhy2wm15pw673Mb10+ajM=\n-----END PRIVATE KEY-----\n",
+  "client_email": "bytecoders-pharmaid-sa@bytecoders-coms4156.iam.gserviceaccount.com",
+  "client_id": "110395155660312655005",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/bytecoders-pharmaid-sa%40bytecoders-coms4156.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
