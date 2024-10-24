@@ -1,0 +1,25 @@
+name: Deploy AppEngine to GCP
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    name: Deploy to App Engine
+    needs: build
+    runs-on: ubuntu-latest
+    environment: 'google_cloud'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Google App Engine
+        uses: google-github-actions/deploy-appengine@v0.4.0
+        with:
+          project_id: ${{ vars.PHARMAID_GCP_PROJECT_ID }}
+          version: main
+          credentials: ${{ secrets.PHARMAID_GOOGLE_APPLICATION_CREDENTIALS }}
+          flags: --no-cache
+          deliverables: app.yaml
