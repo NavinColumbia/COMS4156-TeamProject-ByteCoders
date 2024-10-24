@@ -31,5 +31,5 @@ target/
 .vscode
 .DS_Store
 *.iml
-
+.gcloudignore
 bytecoders-coms4156-key.json
