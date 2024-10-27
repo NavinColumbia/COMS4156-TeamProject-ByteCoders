@@ -10,6 +10,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     environment: 'google_cloud'
+    env:
+      PHARMAID_DB_NAME: ${{ vars.PHARMAID_DB_NAME }}
+      PHARMAID_DB_USER: ${{ vars.PHARMAID_DB_USER }}
+      PHARMAID_DB_PASS: ${{ vars.PHARMAID_DB_PASS }}
+      PHARMAID_DB_CLOUD_SQL_INSTANCE: ${{ vars.PHARMAID_DB_CLOUD_SQL_INSTANCE }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,20 +28,9 @@ jobs:
 
       - name: Print variables
         run: |
-          echo "db_name: ${{ vars.PHARMAID_DB_NAME }}"
-          export PHARMAID_DB_NAME="${{ vars.PHARMAID_DB_NAME }}"
           echo "db_name (env_var): ${PHARMAID_DB_NAME}"
-          echo "\n"
-          echo "db_user: ${{ vars.PHARMAID_DB_USER }}"
-          export PHARMAID_DB_USER="${{ vars.PHARMAID_DB_USER }}"
           echo "db_user (env_var): ${PHARMAID_DB_USER}"
-          echo "\n"
-          echo "db_pass: ${{ vars.PHARMAID_DB_PASS }}"
-          export PHARMAID_DB_PASS="${{ vars.PHARMAID_DB_PASS }}"
           echo "db_pass (env_var): ${PHARMAID_DB_PASS}"
-          echo "\n"
-          echo "cloud_sql_instance: ${{ vars.PHARMAID_DB_CLOUD_SQL_INSTANCE }}"
-          export PHARMAID_DB_CLOUD_SQL_INSTANCE="${{ vars.PHARMAID_DB_CLOUD_SQL_INSTANCE }}"
           echo "cloud_sql_instance (env_var): ${PHARMAID_DB_CLOUD_SQL_INSTANCE}"
 
       - name: Build and Test
