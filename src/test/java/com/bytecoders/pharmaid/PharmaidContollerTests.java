@@ -43,6 +43,28 @@ public class PharmaidContollerTests {
     objectMapper = new ObjectMapper();
   }
 
+  @Test
+  public void testEnvironmentVariables() {
+    java.util.Map<String, String>
+        expectedEnvVars =
+        java.util.Map.of("PHARMAID_DB_NAME",
+            "pharmaid-prod",
+            "PHARMAID_DB_USER",
+            "postgres",
+            "PHARMAID_DB_PASS",
+            "bytecoders4156",
+            "PHARMAID_DB_CLOUD_SQL_INSTANCE",
+            "bytecoders-coms4156:us-east4:pharmaid-db-instance");
+
+    for (java.util.Map.Entry<String, String> entry : expectedEnvVars.entrySet()) {
+      String envVar = entry.getKey();
+      String expectedValue = entry.getValue();
+      String actualValue = System.getenv(envVar);
+      System.out.println(actualValue);
+
+      assertEquals(expectedValue, actualValue, "Mismatch for environment variable " + envVar);
+    }
+  }
 
 
   @Test
@@ -167,8 +189,8 @@ public class PharmaidContollerTests {
 
     when(userService.getUser(userId)).thenReturn(Optional.of(mockUser));
     when(medicationService.getMedication("medId")).thenReturn(Optional.of(mockMed));
-    when(prescriptionService.createPrescription(any(Prescription.class)))
-        .thenReturn(mockPrescription);
+    when(prescriptionService.createPrescription(any(Prescription.class))).thenReturn(
+        mockPrescription);
 
     ResponseEntity<?> response = testController.addPrescription(userId, request);
     assertEquals(HttpStatus.CREATED, response.getStatusCode());
@@ -205,8 +227,8 @@ public class PharmaidContollerTests {
     prescription2.setPrescriptionId("prescription2");
 
     when(userService.getUser(userId)).thenReturn(Optional.of(mockUser));
-    when(prescriptionService.getPrescriptionsForUser(userId))
-        .thenReturn(Arrays.asList(prescription1, prescription2));
+    when(prescriptionService.getPrescriptionsForUser(userId)).thenReturn(Arrays.asList(prescription1,
+        prescription2));
 
     ResponseEntity<?> response = testController.getPrescriptionsForUser(userId);
     assertEquals(HttpStatus.OK, response.getStatusCode());
