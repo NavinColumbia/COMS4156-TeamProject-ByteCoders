@@ -24,14 +24,8 @@ jobs:
           java-version: '17'
           distribution: 'oracle'
           cache: maven
-            
-            #      - name: Set Environment Variables
-            #        run: |
-            #          export PHARMAID_DB_NAME="${{ vars.PHARMAID_DB_NAME }}"
-            #          export PHARMAID_DB_USER="${{ vars.PHARMAID_DB_USER }}"
-          #          export PHARMAID_DB_PASS="${{ vars.PHARMAID_DB_PASS }}"
-          #          export PHARMAID_DB_CLOUD_SQL_INSTANCE="${{ vars.PHARMAID_DB_CLOUD_SQL_INSTANCE }}"
-          #
+
+
       - name: Verify Environment Variables
         run: |
           echo "DB_NAME: ${{ vars.PHARMAID_DB_NAME }}"
@@ -46,4 +40,14 @@ jobs:
             projects/53946755718/locations/global/workloadIdentityPools/bytecoders-identity-pool/providers/github
 
       - name: Build and Test
-        run: mvn clean install
+        env:
+          PHARMAID_DB_NAME: ${{ vars.PHARMAID_DB_NAME }}
+          PHARMAID_DB_USER: ${{ vars.PHARMAID_DB_USER }}
+          PHARMAID_DB_PASS: ${{ vars.PHARMAID_DB_PASS }}
+          PHARMAID_DB_CLOUD_SQL_INSTANCE: ${{ vars.PHARMAID_DB_CLOUD_SQL_INSTANCE }}
+        run: |
+          echo "DB_NAME: $PHARMAID_DB_NAME"
+          echo "DB_USER: $PHARMAID_DB_USER"
+          echo "DB_PASS: $PHARMAID_DB_PASS"
+          echo "CLOUD_INSTANCE: $PHARMAID_DB_CLOUD_SQL_INSTANCE"
+          mvn clean install
