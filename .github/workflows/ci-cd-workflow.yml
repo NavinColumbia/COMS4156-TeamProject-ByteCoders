@@ -34,7 +34,9 @@ jobs:
       - name: Print variables
         run: |
           echo "db_instance: ${{ vars.PHARMAID_DB_CLOUD_SQL_INSTANCE }}"
+          echo "db_instance: $PHARMAID_DB_CLOUD_SQL_INSTANCE"
           echo "gcp_project: ${{ vars.PHARMAID_GCP_PROJECT_ID }}"
+          echo "gcp_project: $PHARMAID_GCP_PROJECT_ID"
           echo "db_name: ${{ vars.PHARMAID_DB_NAME }}"
           echo "db_user: ${{ vars.PHARMAID_DB_USER }}"
           echo "db_pass: ${{ vars.PHARMAID_DB_PASS }}"
