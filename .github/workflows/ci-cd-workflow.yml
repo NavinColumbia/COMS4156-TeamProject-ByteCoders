@@ -31,6 +31,16 @@ jobs:
         run: |
           echo "${{ secrets.PHARMAID_GOOGLE_APPLICATION_CREDENTIALS }}" | base64 -d > $GITHUB_WORKSPACE/src/main/resources/bytecoders-coms4156-key.json
 
+      - name: Print variables
+        run: |
+          echo "db_instance: ${{ vars.PHARMAID_DB_CLOUD_SQL_INSTANCE }}"
+          echo "gcp_project: ${{ vars.PHARMAID_GCP_PROJECT_ID }}"
+          echo "db_name: ${{ vars.PHARMAID_DB_NAME }}"
+          echo "db_user: ${{ vars.PHARMAID_DB_USER }}"
+          echo "db_pass: ${{ vars.PHARMAID_DB_PASS }}"
+          echo "GOOGLE_APPLICATION_CREDENTIALS print:"
+          cat $GITHUB_WORKSPACE/src/main/resources/bytecoders-coms4156-key.json | jq .
+
       - name: Authenticate with GCP
         run: gcloud auth activate-service-account --key-file=$GITHUB_WORKSPACE/src/main/resources/bytecoders-coms4156-key.json
 
