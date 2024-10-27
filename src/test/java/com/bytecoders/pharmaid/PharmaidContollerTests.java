@@ -43,28 +43,28 @@ public class PharmaidContollerTests {
     objectMapper = new ObjectMapper();
   }
 
-  //  @Test
-  //  public void testEnvironmentVariables() {
-  //    java.util.Map<String, String>
-  //        expectedEnvVars =
-  //        java.util.Map.of("PHARMAID_DB_NAME",
-  //            "pharmaid-prod",
-  //            "PHARMAID_DB_USER",
-  //            "postgres",
-  //            "PHARMAID_DB_PASS",
-  //            "bytecoders4156",
-  //            "PHARMAID_DB_CLOUD_SQL_INSTANCE",
-  //            "bytecoders-coms4156:us-east4:pharmaid-db-instance");
-  //
-  //    for (java.util.Map.Entry<String, String> entry : expectedEnvVars.entrySet()) {
-  //      String envVar = entry.getKey();
-  //      String expectedValue = entry.getValue();
-  //      String actualValue = System.getenv(envVar);
-  //      System.out.println(actualValue);
-  //
-  //      assertEquals(expectedValue, actualValue, "Mismatch for environment variable " + envVar);
-  //    }
-  //  }
+  @Test
+  public void testEnvironmentVariables() {
+    java.util.Map<String, String>
+        expectedEnvVars =
+        java.util.Map.of("PHARMAID_DB_NAME",
+            "pharmaid-prod",
+            "PHARMAID_DB_USER",
+            "postgres",
+            "PHARMAID_DB_PASS",
+            "bytecoders4156",
+            "PHARMAID_DB_CLOUD_SQL_INSTANCE",
+            "bytecoders-coms4156:us-east4:pharmaid-db-instance");
+
+    for (java.util.Map.Entry<String, String> entry : expectedEnvVars.entrySet()) {
+      String envVar = entry.getKey();
+      String expectedValue = entry.getValue();
+      String actualValue = System.getenv(envVar);
+      System.out.println(actualValue);
+
+      assertEquals(expectedValue, actualValue, "Mismatch for environment variable " + envVar);
+    }
+  }
 
 
   @Test

@@ -25,14 +25,6 @@ jobs:
           distribution: 'oracle'
           cache: maven
 
-
-      - name: Verify Environment Variables
-        run: |
-          echo "DB_NAME: ${{ vars.PHARMAID_DB_NAME }}"
-          echo "DB_USER: ${{ vars.PHARMAID_DB_USER }}"
-          echo "DB_PASS: ${{ vars.PHARMAID_DB_PASS }}"
-          echo "CLOUD_SQL_INSTANCE: ${{ vars.PHARMAID_DB_CLOUD_SQL_INSTANCE }}"
-
       - uses: 'google-github-actions/auth@v2'
         with:
           service_account: 'bytecoders-pharmaid-sa@bytecoders-coms4156.iam.gserviceaccount.com'
