@@ -9,7 +9,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: 'google_cloud'
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -41,7 +44,9 @@ jobs:
 
       - uses: 'google-github-actions/auth@v2'
         with:
-          credentials_json: $GITHUB_WORKSPACE/src/main/resources/bytecoders-coms4156-key.json
+          service_account: 'bytecoders-pharmaid-sa@bytecoders-coms4156.iam.gserviceaccount.com'
+          workload_identity_provider: |
+            'projects/53946755718/locations/global/workloadIdentityPools/bytecoders-identity-pool/providers/github'
 
 
         #      - name: Set up Google Cloud SDK
