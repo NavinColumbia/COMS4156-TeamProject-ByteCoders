@@ -35,10 +35,13 @@ jobs:
           echo "DB_PASS: $PHARMAID_DB_PASS"
           echo "CLOUD_SQL_INSTANCE: $PHARMAID_DB_CLOUD_SQL_INSTANCE"
 
+      - name: Save service account key to file
+        run: |
+          echo "${{ secrets.PHARMAID_GOOGLE_APPLICATION_CREDENTIALS }}" | base64 -d > $GITHUB_WORKSPACE/src/main/resources/bytecoders-coms4156-key.json
+
       - uses: 'google-github-actions/auth@v2'
         with:
-          service_account: 'bytecoders-pharmaid-sa@bytecoders-coms4156.iam.gserviceaccount.com'
-          workload_identity_provider: 'projects/53946755718/locations/global/workloadIdentityPools/bytecoders-identity-pool/providers/github'
+          credentials_json: $GITHUB_WORKSPACE/src/main/resources/bytecoders-coms4156-key.json
 
 
         #      - name: Set up Google Cloud SDK
@@ -47,9 +50,7 @@ jobs:
       #          project_id: ${{ vars.PHARMAID_GCP_PROJECT_ID }}
       #          service_account_key: ${{ secrets.PHARMAID_GOOGLE_APPLICATION_CREDENTIALS }}
       #
-      #      - name: Save service account key to file
-      #        run: |
-      #          echo "${{ secrets.PHARMAID_GOOGLE_APPLICATION_CREDENTIALS }}" | base64 -d > $GITHUB_WORKSPACE/src/main/resources/bytecoders-coms4156-key.json
+
       #
       #      - name: Authenticate with GCP
       #        run: gcloud auth activate-service-account --key-file=$GITHUB_WORKSPACE/src/main/resources/bytecoders-coms4156-key.json
