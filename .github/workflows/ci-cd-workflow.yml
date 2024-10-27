@@ -10,11 +10,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     environment: 'google_cloud'
-    env:
-      PHARMAID_DB_NAME: ${{ vars.PHARMAID_DB_NAME }}
-      PHARMAID_DB_USER: ${{ vars.PHARMAID_DB_USER }}
-      PHARMAID_DB_PASS: ${{ vars.PHARMAID_DB_PASS }}
-      PHARMAID_DB_CLOUD_SQL_INSTANCE: ${{ vars.PHARMAID_DB_CLOUD_SQL_INSTANCE }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,12 +21,19 @@ jobs:
           distribution: 'oracle'
           cache: maven
 
-      - name: Print variables
+      - name: Export Environment Variables for Maven
         run: |
-          echo "db_name (env_var): ${PHARMAID_DB_NAME}"
-          echo "db_user (env_var): ${PHARMAID_DB_USER}"
-          echo "db_pass (env_var): ${PHARMAID_DB_PASS}"
-          echo "cloud_sql_instance (env_var): ${PHARMAID_DB_CLOUD_SQL_INSTANCE}"
+          echo "PHARMAID_DB_NAME=${{ vars.PHARMAID_DB_NAME }}" >> $GITHUB_ENV
+          echo "PHARMAID_DB_USER=${{ vars.PHARMAID_DB_USER }}" >> $GITHUB_ENV
+          echo "PHARMAID_DB_PASS=${{ vars.PHARMAID_DB_PASS }}" >> $GITHUB_ENV
+          echo "PHARMAID_DB_CLOUD_SQL_INSTANCE=${{ vars.PHARMAID_DB_CLOUD_SQL_INSTANCE }}" >> $GITHUB_ENV
+
+      - name: Verify Environment Variables
+        run: |
+          echo "DB_NAME: $PHARMAID_DB_NAME"
+          echo "DB_USER: $PHARMAID_DB_USER"
+          echo "DB_PASS: $PHARMAID_DB_PASS"
+          echo "CLOUD_SQL_INSTANCE: $PHARMAID_DB_CLOUD_SQL_INSTANCE"
 
       - name: Build and Test
         run: mvn clean install
