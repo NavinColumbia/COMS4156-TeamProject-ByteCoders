@@ -37,7 +37,7 @@ jobs:
 
       - uses: 'google-github-actions/auth@v2'
         with:
-          project_id: ${{ vars.PHARMAID_GCP_PROJECT_ID }}
+          service_account: "bytecoders-pharmaid-sa@bytecoders-coms4156.iam.gserviceaccount.com"
           workload_identity_provider: |
             'projects/53946755718/locations/global/workloadIdentityPools/bytecoders-identity-pool/providers/github'
 
