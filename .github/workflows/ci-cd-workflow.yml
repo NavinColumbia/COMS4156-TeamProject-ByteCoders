@@ -39,6 +39,9 @@ jobs:
           export PHARMAID_DB_CLOUD_SQL_INSTANCE="${{ vars.PHARMAID_DB_CLOUD_SQL_INSTANCE }}"
           echo "cloud_sql_instance (env_var): ${PHARMAID_DB_CLOUD_SQL_INSTANCE}"
 
+      - name: Build and Test
+        run: mvn clean install
+
 #      - name: Set up Google Cloud SDK
 #        uses: google-github-actions/setup-gcloud@v1
 #        with:
@@ -52,8 +55,6 @@ jobs:
 #      - name: Authenticate with GCP
 #        run: gcloud auth activate-service-account --key-file=$GITHUB_WORKSPACE/src/main/resources/bytecoders-coms4156-key.json
 #
-#      - name: Build and Test
-#        run: mvn clean install
 
 #  deploy:
 #    runs-on: ubuntu-latest
