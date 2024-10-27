@@ -1,6 +1,10 @@
 name: CD to App Engine
 
 on:
+  workflow_run:
+    workflows: [ "Java CI with Maven" ]
+    types:
+      - completed
   push:
     branches: [ "main" ]
   pull_request:
@@ -9,16 +13,33 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    needs: build
+
+    environment: 'google_cloud'
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Authenticate with GCP
+        uses: 'google-github-actions/auth@v2'
+        with:
+          service_account: 'bytecoders-pharmaid-sa@bytecoders-coms4156.iam.gserviceaccount.com'
+          workload_identity_provider: |
+            projects/53946755718/locations/global/workloadIdentityPools/bytecoders-identity-pool/providers/github
+
       - name: Google App Engine
         uses: google-github-actions/deploy-appengine@v2
+        env:
+          PHARMAID_DB_NAME: ${{ vars.PHARMAID_DB_NAME }}
+          PHARMAID_DB_USER: ${{ vars.PHARMAID_DB_USER }}
+          PHARMAID_DB_PASS: ${{ vars.PHARMAID_DB_PASS }}
+          PHARMAID_DB_CLOUD_SQL_INSTANCE: ${{ vars.PHARMAID_DB_CLOUD_SQL_INSTANCE }}
         with:
           project_id: ${{ vars.PHARMAID_GCP_PROJECT_ID }}
           version: main
-          credentials: ${{ secrets.PHARMAID_GOOGLE_APPLICATION_CREDENTIALS }}
           flags: --no-cache
           deliverables: app.yaml
