@@ -24,41 +24,25 @@ jobs:
           distribution: 'oracle'
           cache: maven
 
-      - name: Set Environment Variables
-        run: |
-          export PHARMAID_DB_NAME="${{ vars.PHARMAID_DB_NAME }}"
-          export PHARMAID_DB_USER="${{ vars.PHARMAID_DB_USER }}"
-          export PHARMAID_DB_PASS="${{ vars.PHARMAID_DB_PASS }}"
-          export PHARMAID_DB_CLOUD_SQL_INSTANCE="${{ vars.PHARMAID_DB_CLOUD_SQL_INSTANCE }}"
-
-      - name: Verify Environment Variables
-        run: |
-          echo "DB_NAME: $PHARMAID_DB_NAME"
-          echo "DB_USER: $PHARMAID_DB_USER"
-          echo "DB_PASS: $PHARMAID_DB_PASS"
-          echo "CLOUD_SQL_INSTANCE: $PHARMAID_DB_CLOUD_SQL_INSTANCE"
-
-      - name: Save service account key to file
-        run: |
-          echo "${{ secrets.PHARMAID_GOOGLE_APPLICATION_CREDENTIALS }}" | sed -z 's/\n//g' | base64 -d > $GITHUB_WORKSPACE/src/main/resources/bytecoders-coms4156-key.json
+      #      - name: Set Environment Variables
+      #        run: |
+      #          export PHARMAID_DB_NAME="${{ vars.PHARMAID_DB_NAME }}"
+      #          export PHARMAID_DB_USER="${{ vars.PHARMAID_DB_USER }}"
+      #          export PHARMAID_DB_PASS="${{ vars.PHARMAID_DB_PASS }}"
+      #          export PHARMAID_DB_CLOUD_SQL_INSTANCE="${{ vars.PHARMAID_DB_CLOUD_SQL_INSTANCE }}"
+      #
+      #      - name: Verify Environment Variables
+      #        run: |
+      #          echo "DB_NAME: $PHARMAID_DB_NAME"
+      #          echo "DB_USER: $PHARMAID_DB_USER"
+      #          echo "DB_PASS: $PHARMAID_DB_PASS"
+      #          echo "CLOUD_SQL_INSTANCE: $PHARMAID_DB_CLOUD_SQL_INSTANCE"
 
       - uses: 'google-github-actions/auth@v2'
         with:
           service_account: 'bytecoders-pharmaid-sa@bytecoders-coms4156.iam.gserviceaccount.com'
           workload_identity_provider: |
             projects/53946755718/locations/global/workloadIdentityPools/bytecoders-identity-pool/providers/github
-
-
-        #      - name: Set up Google Cloud SDK
-      #        uses: google-github-actions/setup-gcloud@v1
-      #        with:
-      #          project_id: ${{ vars.PHARMAID_GCP_PROJECT_ID }}
-      #          service_account_key: ${{ secrets.PHARMAID_GOOGLE_APPLICATION_CREDENTIALS }}
-      #
-
-      #
-      #      - name: Authenticate with GCP
-      #        run: gcloud auth activate-service-account --key-file=$GITHUB_WORKSPACE/src/main/resources/bytecoders-coms4156-key.json
 
       - name: Build and Test
         run: mvn clean install
