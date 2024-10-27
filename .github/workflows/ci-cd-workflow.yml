@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [ "main" ]
 
+env:
+  PHARMAID_DB_NAME: ${{ vars.PHARMAID_DB_NAME }}
+  PHARMAID_DB_USER: ${{ vars.PHARMAID_DB_USER }}
+  PHARMAID_DB_PASS: ${{ vars.PHARMAID_DB_PASS }}
+  PHARMAID_DB_CLOUD_SQL_INSTANCE: ${{ vars.PHARMAID_DB_CLOUD_SQL_INSTANCE }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -24,12 +30,12 @@ jobs:
           distribution: 'oracle'
           cache: maven
 
-      - name: Export Environment Variables for Maven
-        run: |
-          export PHARMAID_DB_NAME="${{ vars.PHARMAID_DB_NAME }}"
-          export PHARMAID_DB_USER="${{ vars.PHARMAID_DB_USER }}"
-          export PHARMAID_DB_PASS="${{ vars.PHARMAID_DB_PASS }}"
-          export PHARMAID_DB_CLOUD_SQL_INSTANCE="${{ vars.PHARMAID_DB_CLOUD_SQL_INSTANCE }}"
+      #      - name: Export Environment Variables for Maven
+      #        run: |
+      #          export PHARMAID_DB_NAME=${{ vars.PHARMAID_DB_NAME }}
+      #          export PHARMAID_DB_USER=${{ vars.PHARMAID_DB_USER }}
+      #          export PHARMAID_DB_PASS=${{ vars.PHARMAID_DB_PASS }}
+      #          export PHARMAID_DB_CLOUD_SQL_INSTANCE=${{ vars.PHARMAID_DB_CLOUD_SQL_INSTANCE }}
 
       - name: Verify Environment Variables
         run: |
