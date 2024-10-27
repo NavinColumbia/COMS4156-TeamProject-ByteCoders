@@ -37,9 +37,8 @@ jobs:
 
       - uses: 'google-github-actions/auth@v2'
         with:
-          service_account: "bytecoders-pharmaid-sa@bytecoders-coms4156.iam.gserviceaccount.com"
-          workload_identity_provider: |
-            'projects/53946755718/locations/global/workloadIdentityPools/bytecoders-identity-pool/providers/github'
+          service_account: 'bytecoders-pharmaid-sa@bytecoders-coms4156.iam.gserviceaccount.com'
+          workload_identity_provider: 'projects/53946755718/locations/global/workloadIdentityPools/bytecoders-identity-pool/providers/github'
 
 
         #      - name: Set up Google Cloud SDK
