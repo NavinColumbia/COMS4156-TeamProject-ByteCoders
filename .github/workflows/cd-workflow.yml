@@ -1,0 +1,24 @@
+name: CD to App Engine
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Google App Engine
+        uses: google-github-actions/deploy-appengine@v2
+        with:
+          project_id: ${{ vars.PHARMAID_GCP_PROJECT_ID }}
+          version: main
+          credentials: ${{ secrets.PHARMAID_GOOGLE_APPLICATION_CREDENTIALS }}
+          flags: --no-cache
+          deliverables: app.yaml

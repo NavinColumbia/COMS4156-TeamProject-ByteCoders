@@ -23,20 +23,20 @@ jobs:
           java-version: '17'
           distribution: 'oracle'
           cache: maven
-
-      #      - name: Set Environment Variables
-      #        run: |
-      #          export PHARMAID_DB_NAME="${{ vars.PHARMAID_DB_NAME }}"
-      #          export PHARMAID_DB_USER="${{ vars.PHARMAID_DB_USER }}"
-      #          export PHARMAID_DB_PASS="${{ vars.PHARMAID_DB_PASS }}"
-      #          export PHARMAID_DB_CLOUD_SQL_INSTANCE="${{ vars.PHARMAID_DB_CLOUD_SQL_INSTANCE }}"
-      #
-      #      - name: Verify Environment Variables
-      #        run: |
-      #          echo "DB_NAME: $PHARMAID_DB_NAME"
-      #          echo "DB_USER: $PHARMAID_DB_USER"
-      #          echo "DB_PASS: $PHARMAID_DB_PASS"
-      #          echo "CLOUD_SQL_INSTANCE: $PHARMAID_DB_CLOUD_SQL_INSTANCE"
+            
+            #      - name: Set Environment Variables
+            #        run: |
+            #          export PHARMAID_DB_NAME="${{ vars.PHARMAID_DB_NAME }}"
+            #          export PHARMAID_DB_USER="${{ vars.PHARMAID_DB_USER }}"
+            #          export PHARMAID_DB_PASS="${{ vars.PHARMAID_DB_PASS }}"
+            #          export PHARMAID_DB_CLOUD_SQL_INSTANCE="${{ vars.PHARMAID_DB_CLOUD_SQL_INSTANCE }}"
+          #
+      - name: Verify Environment Variables
+        run: |
+          echo "DB_NAME: ${{ vars.PHARMAID_DB_NAME }}"
+          echo "DB_USER: ${{ vars.PHARMAID_DB_USER }}"
+          echo "DB_PASS: ${{ vars.PHARMAID_DB_PASS }}"
+          echo "CLOUD_SQL_INSTANCE: ${{ vars.PHARMAID_DB_CLOUD_SQL_INSTANCE }}"
 
       - uses: 'google-github-actions/auth@v2'
         with:
@@ -46,6 +46,7 @@ jobs:
 
       - name: Build and Test
         run: mvn clean install
+
 
 #  deploy:
 #    runs-on: ubuntu-latest
