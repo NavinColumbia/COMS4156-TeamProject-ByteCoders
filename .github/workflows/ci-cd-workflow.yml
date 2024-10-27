@@ -24,12 +24,12 @@ jobs:
           distribution: 'oracle'
           cache: maven
 
-      - name: Set up Environment Variables
+      - name: Set Environment Variables
         run: |
-          echo "PHARMAID_DB_NAME=${{ vars.PHARMAID_DB_NAME }}" >> $GITHUB_ENV
-          echo "PHARMAID_DB_USER=${{ vars.PHARMAID_DB_USER }}" >> $GITHUB_ENV
-          echo "PHARMAID_DB_PASS=${{ vars.PHARMAID_DB_PASS }}" >> $GITHUB_ENV
-          echo "PHARMAID_DB_CLOUD_SQL_INSTANCE=${{ vars.PHARMAID_DB_CLOUD_SQL_INSTANCE }}" >> $GITHUB_ENV
+          export PHARMAID_DB_NAME="${{ vars.PHARMAID_DB_NAME }}"
+          export PHARMAID_DB_USER="${{ vars.PHARMAID_DB_USER }}"
+          export PHARMAID_DB_PASS="${{ vars.PHARMAID_DB_PASS }}"
+          export PHARMAID_DB_CLOUD_SQL_INSTANCE="${{ vars.PHARMAID_DB_CLOUD_SQL_INSTANCE }}"
 
       - name: Verify Environment Variables
         run: |
