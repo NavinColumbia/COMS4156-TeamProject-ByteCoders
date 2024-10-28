@@ -2,7 +2,6 @@ package com.bytecoders.pharmaid;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import com.bytecoders.pharmaid.repository.model.Medication;
@@ -18,7 +17,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Optional;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -42,8 +40,6 @@ public class PharmaidContollerTests {
   void setup() {
     objectMapper = new ObjectMapper();
   }
-
-
 
   @Test
   public void registerSuccessTest() {
@@ -167,8 +163,8 @@ public class PharmaidContollerTests {
 
     when(userService.getUser(userId)).thenReturn(Optional.of(mockUser));
     when(medicationService.getMedication("medId")).thenReturn(Optional.of(mockMed));
-    when(prescriptionService.createPrescription(any(Prescription.class)))
-        .thenReturn(mockPrescription);
+    when(prescriptionService.createPrescription(any(Prescription.class))).thenReturn(
+        mockPrescription);
 
     ResponseEntity<?> response = testController.addPrescription(userId, request);
     assertEquals(HttpStatus.CREATED, response.getStatusCode());
@@ -205,8 +201,8 @@ public class PharmaidContollerTests {
     prescription2.setPrescriptionId("prescription2");
 
     when(userService.getUser(userId)).thenReturn(Optional.of(mockUser));
-    when(prescriptionService.getPrescriptionsForUser(userId))
-        .thenReturn(Arrays.asList(prescription1, prescription2));
+    when(prescriptionService.getPrescriptionsForUser(userId)).thenReturn(Arrays.asList(prescription1,
+        prescription2));
 
     ResponseEntity<?> response = testController.getPrescriptionsForUser(userId);
     assertEquals(HttpStatus.OK, response.getStatusCode());

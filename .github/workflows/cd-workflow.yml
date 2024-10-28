@@ -1,0 +1,35 @@
+name: Deploy to App Engine
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    environment: 'google_cloud'
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - id: 'auth'
+        name: Authenticate with GCP
+        uses: 'google-github-actions/auth@v2'
+        with:
+          service_account: 'bytecoders-pharmaid-sa@bytecoders-coms4156.iam.gserviceaccount.com'
+          workload_identity_provider: |
+            projects/53946755718/locations/global/workloadIdentityPools/bytecoders-identity-pool/providers/github
+
+      - name: Google App Engine
+        uses: google-github-actions/deploy-appengine@v2
+        with:
+          project_id: ${{ steps.auth.outputs.project_id }}
+          version: main
+          flags: --no-cache
+          deliverables: app.yaml
