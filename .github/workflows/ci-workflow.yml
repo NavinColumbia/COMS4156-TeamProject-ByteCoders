@@ -31,6 +31,7 @@ jobs:
         name: Retrive GCP Secrets from Secrets Manager
         uses: 'google-github-actions/get-secretmanager-secrets@v2'
         with:
+          export_to_environment: true
           secrets: |-
             PHARMAID_DB_NAME:bytecoders-coms4156/PHARMAID_DB_NAME
             PHARMAID_DB_USER:bytecoders-coms4156/PHARMAID_DB_USER
@@ -45,11 +46,6 @@ jobs:
           cache: maven
 
       - name: Build and Test
-        env:
-          PHARMAID_DB_NAME: '${{ steps.secrets.outputs.PHARMAID_DB_NAME }}'
-          PHARMAID_DB_USER: '${{ steps.secrets.outputs.PHARMAID_DB_USER }}'
-          PHARMAID_DB_PASS: '${{ steps.secrets.outputs.PHARMAID_DB_PASS }}'
-          PHARMAID_DB_CLOUD_SQL_INSTANCE: '${{ steps.secrets.outputs.PHARMAID_DB_CLOUD_SQL_INSTANCE }}'
         run: |
           echo "DB_INSTANCE: ${PHARMAID_DB_CLOUD_SQL_INSTANCE}"
           echo "DB_NAME: $PHARMAID_DB_NAME"
