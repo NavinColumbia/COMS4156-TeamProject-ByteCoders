@@ -27,17 +27,6 @@ jobs:
           workload_identity_provider: |
             projects/53946755718/locations/global/workloadIdentityPools/bytecoders-identity-pool/providers/github
 
-      - id: 'secrets'
-        name: Retrive GCP Secrets from Secrets Manager
-        uses: 'google-github-actions/get-secretmanager-secrets@v2'
-        with:
-          export_to_environment: true
-          secrets: |-
-            PHARMAID_DB_NAME:bytecoders-coms4156/PHARMAID_DB_NAME
-            PHARMAID_DB_USER:bytecoders-coms4156/PHARMAID_DB_USER
-            PHARMAID_DB_PASS:bytecoders-coms4156/PHARMAID_DB_PASS
-            PHARMAID_DB_CLOUD_SQL_INSTANCE:bytecoders-coms4156/PHARMAID_DB_CLOUD_SQL_INSTANCE
-
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -46,8 +35,4 @@ jobs:
           cache: maven
 
       - name: Build and Test
-        run: |
-          echo "DB_INSTANCE: ${PHARMAID_DB_CLOUD_SQL_INSTANCE}"
-          echo "DB_NAME: $PHARMAID_DB_NAME"
-          echo "DB_USER: $PHARMAID_DB_USER"
-          echo "DB_PASS: $PHARMAID_DB_PASS"
+        run: mvn clean install
