@@ -67,6 +67,37 @@ public class PharmaidController {
       return new ResponseEntity<>("Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+ 
+  /**
+   * Delete a user endpoint.
+   *
+   * @param userId  user to delete
+   * @return a ResponseEntity with a success message if user is successfully deleted, or an error
+   *     message if the deletion is unsuccessful
+   */
+  @DeleteMapping(path = "/users/{userId}")
+  public ResponseEntity<?> delete(@PathVariable("userId") String userId) {
+    try{
+      final Optional<User> userOptional = userService.getUser(userId);
+
+      if (userOptional.isEmpty()) {
+        return new ResponseEntity<>("Provided User doesn't exist", HttpStatus.NOT_FOUND);
+      }
+
+      List<Prescription> userPrescriptions = prescriptionService.getPrescriptionsForUser(userId);
+      for(Prescription p : userPrescriptions){
+        prescriptionService.deletePrescription(p.getPrescriptionId());
+      }
+
+      userService.deleteUser(userId);
+      return new ResponseEntity<>("User deleted successfully", HttpStatus.OK);
+    }
+    catch (Exception e){
+      return new ResponseEntity<>(
+          "Unexpected error encountered during deletion", HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
 
 
 
