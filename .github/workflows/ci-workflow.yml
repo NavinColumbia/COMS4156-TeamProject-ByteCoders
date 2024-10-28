@@ -27,7 +27,8 @@ jobs:
           workload_identity_provider: |
             projects/53946755718/locations/global/workloadIdentityPools/bytecoders-identity-pool/providers/github
 
-      - name: Retrive GCP Secrets from Secrets Manager
+      - id: 'secrets'
+        name: Retrive GCP Secrets from Secrets Manager
         uses: 'google-github-actions/get-secretmanager-secrets@v2'
         with:
           secrets: |-
