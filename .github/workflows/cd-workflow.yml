@@ -3,8 +3,6 @@ name: Deploy to App Engine
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
   deploy:
@@ -27,13 +25,6 @@ jobs:
           service_account: 'bytecoders-pharmaid-sa@bytecoders-coms4156.iam.gserviceaccount.com'
           workload_identity_provider: |
             projects/53946755718/locations/global/workloadIdentityPools/bytecoders-identity-pool/providers/github
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'oracle'
-          cache: maven
 
       - name: Google App Engine
         uses: google-github-actions/deploy-appengine@v2
