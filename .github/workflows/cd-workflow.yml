@@ -5,10 +5,6 @@ on:
     workflows: [ "Java CI with Maven" ]
     types:
       - completed
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
   deploy:
@@ -19,6 +15,9 @@ jobs:
     permissions:
       contents: 'read'
       id-token: 'write'
+
+    #    # Only run when Java CI with Maven is success and pushing to main
+    #    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' }}
 
     steps:
       - name: Checkout
@@ -31,15 +30,15 @@ jobs:
           workload_identity_provider: |
             projects/53946755718/locations/global/workloadIdentityPools/bytecoders-identity-pool/providers/github
 
-      - name: Google App Engine
-        uses: google-github-actions/deploy-appengine@v2
-        env:
-          PHARMAID_DB_NAME: ${{ vars.PHARMAID_DB_NAME }}
-          PHARMAID_DB_USER: ${{ vars.PHARMAID_DB_USER }}
-          PHARMAID_DB_PASS: ${{ vars.PHARMAID_DB_PASS }}
-          PHARMAID_DB_CLOUD_SQL_INSTANCE: ${{ vars.PHARMAID_DB_CLOUD_SQL_INSTANCE }}
-        with:
-          project_id: ${{ vars.PHARMAID_GCP_PROJECT_ID }}
-          version: main
-          flags: --no-cache
-          deliverables: app.yaml
+#      - name: Google App Engine
+#        uses: google-github-actions/deploy-appengine@v2
+#        env:
+#          PHARMAID_DB_NAME: ${{ vars.PHARMAID_DB_NAME }}
+#          PHARMAID_DB_USER: ${{ vars.PHARMAID_DB_USER }}
+#          PHARMAID_DB_PASS: ${{ vars.PHARMAID_DB_PASS }}
+#          PHARMAID_DB_CLOUD_SQL_INSTANCE: ${{ vars.PHARMAID_DB_CLOUD_SQL_INSTANCE }}
+#        with:
+#          project_id: ${{ vars.PHARMAID_GCP_PROJECT_ID }}
+#          version: main
+#          flags: --no-cache
+#          deliverables: app.yaml
