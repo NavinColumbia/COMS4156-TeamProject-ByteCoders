@@ -51,6 +51,6 @@ jobs:
           PHARMAID_DB_CLOUD_SQL_INSTANCE: '${{ steps.secrets.outputs.PHARMAID_DB_CLOUD_SQL_INSTANCE }}'
         run: |
           echo "DB_INSTANCE: ${PHARMAID_DB_CLOUD_SQL_INSTANCE}"
-          echo "DB_NAME: ${PHARMAID_DB_NAME}"
-          echo "DB_USER: ${PHARMAID_DB_USER}"
-          echo "DB_PASS: ${PHARMAID_DB_PASS}"
+          echo "DB_NAME: $PHARMAID_DB_NAME"
+          echo "DB_USER: $PHARMAID_DB_USER"
+          echo "DB_PASS: $PHARMAID_DB_PASS"
