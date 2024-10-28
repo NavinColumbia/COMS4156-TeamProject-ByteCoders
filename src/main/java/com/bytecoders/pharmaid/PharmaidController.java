@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -67,6 +68,8 @@ public class PharmaidController {
       return new ResponseEntity<>("Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+
+
 
   /**
    * Login user endpoint.
@@ -165,6 +168,41 @@ public class PharmaidController {
           HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+
+  /**
+   * Endpoint to remove a user's prescription.
+   *
+   * @param userId user whose prescription we're trying to remove
+   * @param prescriptionId prescription we are trying to delete 
+   * @return a ResponseEntity with user's prescriptions if the operation is successful,
+   *      or an error message if an error occurred
+   */
+  @DeleteMapping(path = "/users/{userId}/prescriptions/{prescriptionId}")
+  public ResponseEntity<?> removePrescription(
+    @PathVariable("userId") String userId, 
+    @PathVariable("prescriptionId") String prescriptionId) {
+      try {
+        final Optional<User> userOptional = userService.getUser(userId);
+
+        if (userOptional.isEmpty()) {
+          return new ResponseEntity<>("Provided User doesn't exist", HttpStatus.NOT_FOUND);
+        }
+
+        final Optional<Prescription> prescriptionOptional =
+          prescriptionService.getPrescriptionById(prescriptionId);
+
+        if (prescriptionOptional.isEmpty()) {
+          return new ResponseEntity<>("Prescription doesn't exist", HttpStatus.NOT_FOUND);
+        }
+
+        prescriptionService.deletePrescription(prescriptionId);
+        return new ResponseEntity<>("Prescription removed.", HttpStatus.OK);
+      } catch (Exception e) {
+        return new ResponseEntity<>(
+            "Unexpected error encountered while removing prescription.",
+            HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+    }
 
 
 }
