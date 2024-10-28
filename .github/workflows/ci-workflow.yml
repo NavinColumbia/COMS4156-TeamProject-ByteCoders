@@ -27,19 +27,14 @@ jobs:
           workload_identity_provider: |
             projects/53946755718/locations/global/workloadIdentityPools/bytecoders-identity-pool/providers/github
 
-      - name: Retrieve secrets from Secret Manager
-        run: |
-          export PHARMAID_DB_NAME=$(gcloud secrets versions access latest --secret="PHARMAID_DB_NAME")
-          export PHARMAID_DB_USER=$(gcloud secrets versions access latest --secret="PHARMAID_DB_USER")
-          export PHARMAID_DB_PASS=$(gcloud secrets versions access latest --secret="PHARMAID_DB_PASS")
-          export PHARMAID_DB_CLOUD_SQL_INSTANCE=$(gcloud secrets versions access latest --secret="PHARMAID_DB_CLOUD_SQL_INSTANCE")
-
-      - name: Print secrets
-        run: |
-          echo "DB_INSTANCE: ${PHARMAID_DB_CLOUD_SQL_INSTANCE}"
-          echo "DB_NAME: ${PHARMAID_DB_NAME}"
-          echo "DB_USER: ${PHARMAID_DB_USER}"
-          echo "DB_PASS: ${PHARMAID_DB_PASS}"
+      - name: Retrive GCP Secrets from Secrets Manager
+        uses: 'google-github-actions/get-secretmanager-secrets@v2'
+        with:
+          secrets: |-
+            PHARMAID_DB_NAME:bytecoders-coms4156/PHARMAID_DB_NAME
+            PHARMAID_DB_USER:bytecoders-coms4156/PHARMAID_DB_USER
+            PHARMAID_DB_PASS:bytecoders-coms4156/PHARMAID_DB_PASS
+            PHARMAID_DB_CLOUD_SQL_INSTANCE:bytecoders-coms4156/PHARMAID_DB_CLOUD_SQL_INSTANCE
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -50,8 +45,12 @@ jobs:
 
       - name: Build and Test
         env:
-          PHARMAID_DB_NAME: $PHARMAID_DB_NAME
-          PHARMAID_DB_USER: $PHARMAID_DB_USER
-          PHARMAID_DB_PASS: $PHARMAID_DB_PASS
-          PHARMAID_DB_CLOUD_SQL_INSTANCE: $PHARMAID_DB_CLOUD_SQL_INSTANCE
-        run: mvn clean install
+          PHARMAID_DB_NAME: '${{ steps.secrets.PHARMAID_DB_NAME }}'
+          PHARMAID_DB_USER: '${{ steps.secrets.PHARMAID_DB_USER }}'
+          PHARMAID_DB_PASS: '${{ steps.secrets.PHARMAID_DB_PASS }}'
+          PHARMAID_DB_CLOUD_SQL_INSTANCE: '${{ steps.secrets.PHARMAID_DB_CLOUD_SQL_INSTANCE }}'
+        run: |
+          echo "DB_INSTANCE: ${PHARMAID_DB_CLOUD_SQL_INSTANCE}"
+          echo "DB_NAME: ${PHARMAID_DB_NAME}"
+          echo "DB_USER: ${PHARMAID_DB_USER}"
+          echo "DB_PASS: ${PHARMAID_DB_PASS}"
