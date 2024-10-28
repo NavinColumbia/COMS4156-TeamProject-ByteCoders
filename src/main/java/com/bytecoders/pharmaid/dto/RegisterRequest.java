@@ -1,25 +1,24 @@
 package com.bytecoders.pharmaid.dto;
 
+import com.bytecoders.pharmaid.repository.model.UserType;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 /**
  *
  */
-public class RegisterRequest {
-
-  @NotBlank
-  @Email
+public class RegisterUserRequest {
+  @NotNull
   private String email;
 
-  @NotBlank
+  @NotNull
   private String password;
 
-  
-  /** 
-   * @return String
-   */
-  // Getters and Setters
+  @NotNull
+  private UserType userType = UserType.PATIENT;
+
+  // getters and setters
   public String getEmail() {
     return email;
   }
@@ -36,4 +35,11 @@ public class RegisterRequest {
     this.password = password;
   }
 
+  public UserType getUserType() {
+    return userType;
+  }
+
+  public void setUserType(UserType userType) {
+    this.userType = userType;
+  }
 }

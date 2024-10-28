@@ -1,25 +1,18 @@
 package com.bytecoders.pharmaid.dto;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 /**
  *
  */
-public class LoginRequest {
-
-  @NotBlank
-  @Email
+public class LoginUserRequest {
+  @NotNull
   private String email;
 
-  @NotBlank
+  @NotNull
   private String password;
 
-  
-  /** 
-   * @return String
-   */
-  // Getters and Setters
+  // getters and setters
   public String getEmail() {
     return email;
   }
