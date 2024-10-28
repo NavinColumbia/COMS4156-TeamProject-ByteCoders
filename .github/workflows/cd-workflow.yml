@@ -1,4 +1,4 @@
-name: CD to App Engine
+name: Deploy to App Engine
 
 on:
   workflow_run:
@@ -16,14 +16,15 @@ jobs:
       contents: 'read'
       id-token: 'write'
 
-    #    # Only run when Java CI with Maven is success and pushing to main
-    #    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' }}
+    # Only run when Java CI with Maven is success and pushing to main
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Authenticate with GCP
+      - id: 'auth'
+        name: Authenticate with GCP
         uses: 'google-github-actions/auth@v2'
         with:
           service_account: 'bytecoders-pharmaid-sa@bytecoders-coms4156.iam.gserviceaccount.com'
@@ -40,6 +41,7 @@ jobs:
       - name: Google App Engine
         uses: google-github-actions/deploy-appengine@v2
         with:
+          project_id: ${{ steps.auth.outputs.project_id }}
           version: main
           flags: --no-cache
           deliverables: app.yaml
