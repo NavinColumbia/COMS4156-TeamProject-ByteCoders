@@ -28,6 +28,16 @@ public class PrescriptionService {
   }
 
   /**
+   * Update an existing prescription.
+   *
+   * @param prescription the prescription to create
+   * @return Prescription the newly created prescription
+   */
+  public Prescription updatePrescription(Prescription prescription) {
+    return prescriptionRepository.save(prescription);
+  }
+
+  /**
    * Get a prescription by its ID.
    *
    * @param prescriptionId the prescription ID

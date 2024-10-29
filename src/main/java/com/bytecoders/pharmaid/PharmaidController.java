@@ -6,6 +6,7 @@ import com.bytecoders.pharmaid.repository.model.User;
 import com.bytecoders.pharmaid.request.CreatePrescriptionRequest;
 import com.bytecoders.pharmaid.request.LoginUserRequest;
 import com.bytecoders.pharmaid.request.RegisterUserRequest;
+import com.bytecoders.pharmaid.request.UpdatePrescriptionRequest;
 import com.bytecoders.pharmaid.service.MedicationService;
 import com.bytecoders.pharmaid.service.PrescriptionService;
 import com.bytecoders.pharmaid.service.UserService;
@@ -20,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -97,9 +99,6 @@ public class PharmaidController {
           "Unexpected error encountered during deletion", HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
-
-
-
 
   /**
    * Login user endpoint.
@@ -186,6 +185,57 @@ public class PharmaidController {
           "Unexpected error encountered while creating a prescription",
           HttpStatus.INTERNAL_SERVER_ERROR);
     }
+  }
+
+  /**
+   * Endpoint to update a user's prescriptions.
+   *
+   * @param userId user whose prescriptions we're trying to retrieve
+   * @param prescriptionId  prescription we are trying to update
+   * @param request containg prescription update
+   * @return a ResponseEntity with updated prescription if the operation is successful,
+   *      or an error message if an error occurred
+   */
+  @PatchMapping(path = "/users/{userId}/prescriptions/{prescriptionId}")
+  public ResponseEntity<?> updateUsersPrescription(
+    @PathVariable("userId") String userId,
+    @PathVariable("prescriptionId") String prescriptionId,
+    @RequestBody @Valid UpdatePrescriptionRequest request) {
+      try {
+        final Optional<User> userOptional = userService.getUser(userId);
+  
+        if (userOptional.isEmpty()) {
+          return new ResponseEntity<>("Provided User doesn't exist", HttpStatus.NOT_FOUND);
+        }
+
+        final Optional<Prescription> prescriptionOptional =
+              prescriptionService.getPrescriptionById(prescriptionId);
+
+        if (prescriptionOptional.isEmpty() 
+            || prescriptionOptional.get().getUser().getId() != userId) {
+          return new ResponseEntity<>(
+            "Provided Prescription doesn't exist",
+            HttpStatus.NOT_FOUND);
+        }
+
+        Prescription prescription = prescriptionService.getPrescriptionById(prescriptionId).get();
+
+        if (request.getEndDate() != null) {
+          prescription.setEndDate(request.getEndDate());
+        }
+        
+        if (request.getIsActive() != null) {
+          prescription.setIsActive(request.getIsActive());
+        }
+
+        return new ResponseEntity<>(prescriptionService.updatePrescription(prescription), HttpStatus.OK);
+
+      } catch (Exception e) {
+        return new ResponseEntity<>(
+            "Unexpected error encountered while creating a prescription",
+            HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+
   }
 
   /**
