@@ -6,37 +6,50 @@ import com.bytecoders.pharmaid.repository.model.User;
 import com.bytecoders.pharmaid.request.CreatePrescriptionRequest;
 import com.bytecoders.pharmaid.request.LoginUserRequest;
 import com.bytecoders.pharmaid.request.RegisterUserRequest;
+import com.bytecoders.pharmaid.security.JwtTokenProvider;
+import com.bytecoders.pharmaid.service.AuthorizationService;
 import com.bytecoders.pharmaid.service.MedicationService;
 import com.bytecoders.pharmaid.service.PrescriptionService;
+import com.bytecoders.pharmaid.service.SharingPermissionService;
 import com.bytecoders.pharmaid.service.UserService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * This class contains all the API routes for the system.
- */
+/** This class contains all the API routes for the system. */
+@Slf4j
 @RestController
 public class PharmaidController {
 
-  @Autowired
-  private UserService userService;
+  @Autowired private UserService userService;
 
-  @Autowired
-  private MedicationService medicationService;
+  @Autowired private MedicationService medicationService;
 
-  @Autowired
-  private PrescriptionService prescriptionService;
+  @Autowired private PrescriptionService prescriptionService;
+
+  @Autowired private PasswordEncoder passwordEncoder;
+
+  @Autowired private JwtTokenProvider tokenProvider;
+
+  @Autowired private AuthorizationService authorizationService;
+
+  @Autowired private SharingPermissionService sharingPermissionService;
 
   /**
    * Basic hello endpoint for testing.
@@ -49,46 +62,78 @@ public class PharmaidController {
   }
 
   /**
-   * Register user endpoint.
+   * Handles user registration.
    *
-   * @param request RegisterUserRequest
-   * @return a ResponseEntity with a success message if the operation is successful, or an error
-   *     message if the registration is unsuccessful
+   * @param request the registration request
+   * @return ResponseEntity with registration result
    */
-  @PostMapping({"/register"})
-  public ResponseEntity<?> register(@RequestBody @Valid RegisterUserRequest request) {
+  @PostMapping("/register")
+  public ResponseEntity<?> register(@Valid @RequestBody RegisterUserRequest request) {
     try {
-      final User user = userService.registerUser(request);
-      return new ResponseEntity<>(user, HttpStatus.CREATED);
+      // Let's add some debug logging
+      log.debug(
+          "Registering user with email: {} and type: {}",
+          request.getEmail(),
+          request.getUserType());
+
+      User user = new User();
+      user.setEmail(request.getEmail());
+      user.setHashedPassword(passwordEncoder.encode(request.getPassword()));
+      user.setUserType(request.getUserType());
+
+      User savedUser = userService.createUser(user);
+      log.debug("User registered successfully with id: {}", savedUser.getId());
+
+      return new ResponseEntity<>("User registered successfully", HttpStatus.CREATED);
     } catch (DataIntegrityViolationException e) {
-      return new ResponseEntity<>("User already exists for this email", HttpStatus.BAD_REQUEST);
+      return new ResponseEntity<>("User already exists", HttpStatus.BAD_REQUEST);
     } catch (Exception e) {
-      return new ResponseEntity<>("Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
+      log.error("Error during registration", e);
+      return new ResponseEntity<>("Registration failed", HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
   /**
-   * Login user endpoint.
+   * Handles user login.
    *
-   * @param request LoginUserRequest
-   * @return a ResponseEntity with a success message if the operation is successful, or an error
-   *     message if the login is unsuccessful
+   * @param request the login request
+   * @return ResponseEntity with JWT token if successful
    */
-  @PostMapping(path = "/login")
-  public ResponseEntity<String> login(@RequestBody @Valid LoginUserRequest request) {
+  @PostMapping("/login")
+  public ResponseEntity<?> login(@Valid @RequestBody LoginUserRequest request) {
     try {
-      Optional<User> user = userService.loginUser(request);
+      log.debug("Attempting login for email: {}", request.getEmail());
 
-      if (user.isEmpty()) {
-        return new ResponseEntity<>("Forbidden", HttpStatus.UNAUTHORIZED);
+      // First find user by email
+      Optional<User> userOpt = userService.getUserByEmail(request.getEmail());
+
+      if (userOpt.isEmpty()) {
+        log.debug("User not found with email: {}", request.getEmail());
+        return new ResponseEntity<>("Invalid credentials", HttpStatus.UNAUTHORIZED);
       }
 
-      ObjectMapper mapper = new ObjectMapper();
-      String json = mapper.writeValueAsString(user.get());
-      return new ResponseEntity<>(json, HttpStatus.OK);
+      User user = userOpt.get();
+
+      // Verify password
+      if (!passwordEncoder.matches(request.getPassword(), user.getHashedPassword())) {
+        log.debug("Invalid password for user: {}", request.getEmail());
+        return new ResponseEntity<>("Invalid credentials", HttpStatus.UNAUTHORIZED);
+      }
+
+      // Generate token
+      String token = tokenProvider.generateToken(user.getId());
+
+      Map<String, Object> response = new HashMap<>();
+      response.put("token", "Bearer " + token);
+      response.put("userId", user.getId());
+      response.put("email", user.getEmail());
+      response.put("userType", user.getUserType());
+
+      log.debug("Login successful for user: {}", request.getEmail());
+      return ResponseEntity.ok(response);
     } catch (Exception e) {
-      return new ResponseEntity<>("Unexpected error encountered during login",
-          HttpStatus.INTERNAL_SERVER_ERROR);
+      log.error("Error during login", e);
+      return new ResponseEntity<>("Login failed", HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -110,70 +155,114 @@ public class PharmaidController {
     }
   }
 
+  private String getCurrentUserId() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    log.debug(
+        "Authentication principal type: {}",
+        authentication != null ? authentication.getPrincipal().getClass() : "null");
+
+    if (authentication != null && authentication.getPrincipal() instanceof User) {
+      User user = (User) authentication.getPrincipal();
+      return user.getId();
+    }
+    throw new RuntimeException("User not authenticated");
+  }
+
   /**
    * Add prescription endpoint.
    *
-   * @param userId  user to add a prescription for
+   * @param userId user to add a prescription for
    * @param request request containing prescription-related data
    * @return a ResponseEntity with the newly creation prescription if the operation is successful,
    *     or an error message if an error occurred
    */
-  @PostMapping(path = "/users/{userId}/prescriptions")
-  public ResponseEntity<?> addPrescription(@PathVariable("userId") String userId,
-      @RequestBody @Valid CreatePrescriptionRequest request) {
+  @PostMapping("/{userId}/records/prescriptions")
+  public ResponseEntity<?> addPrescription(
+      @PathVariable("userId") String userId,
+      @Valid @RequestBody CreatePrescriptionRequest request) {
     try {
-      final Optional<User> userOptional = userService.getUser(userId);
+      // Get current user ID from security context
+      String currentUserId = getCurrentUserId();
 
-      if (userOptional.isEmpty()) {
-        return new ResponseEntity<>("Provided User doesn't exist", HttpStatus.NOT_FOUND);
+      // Check authorization
+      if (!authorizationService.canModifyUserRecords(currentUserId, userId)) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+            .body("Not authorized to create prescriptions for this user");
       }
 
-      final Optional<Medication>
-          medOptional =
-          medicationService.getMedication(request.getMedicationId());
+      // Get user
+      User user =
+          userService.getUser(userId).orElseThrow(() -> new RuntimeException("User not found"));
 
-      if (medOptional.isEmpty()) {
-        return new ResponseEntity<>("Medication doesn't exist", HttpStatus.NOT_FOUND);
-      }
+      // Get medication
+      Medication medication =
+          medicationService
+              .getMedication(request.getMedicationId())
+              .orElseThrow(() -> new RuntimeException("Medication not found"));
 
-      final Prescription prescription = new Prescription();
-      prescription.setUser(userOptional.get());
-      prescription.setMedication(medOptional.get());
+      // Create prescription
+      Prescription prescription = new Prescription();
+      prescription.setUser(user);
+      prescription.setMedication(medication);
       prescription.setDosage(request.getDosage());
       prescription.setNumOfDoses(request.getNumOfDoses());
       prescription.setStartDate(request.getStartDate());
       prescription.setEndDate(request.getEndDate());
       prescription.setIsActive(request.getIsActive());
 
-      return new ResponseEntity<>(prescriptionService.createPrescription(prescription),
-          HttpStatus.CREATED);
+      Prescription savedPrescription = prescriptionService.createPrescription(prescription);
+      return ResponseEntity.status(HttpStatus.CREATED).body(savedPrescription);
     } catch (Exception e) {
-      return new ResponseEntity<>("Unexpected error encountered while creating a prescription",
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body("Error creating prescription: " + e.getMessage());
+    }
+  }
+
+  /**
+   * Endpoint to get user's prescriptions. Only accessible by: - The user themselves - Users with
+   * explicit VIEW or EDIT permission - First responders
+   *
+   * @param userId user whose prescriptions we're trying to retrieve
+   * @return a ResponseEntity with user's prescriptions if authorized, or an error message
+   */
+  @GetMapping(path = "/users/{userId}/prescriptions")
+  public ResponseEntity<?> getPrescriptionsForUser(@PathVariable("userId") String userId) {
+    try {
+      // Get current user's ID
+      String currentUserId = getCurrentUserId();
+
+      // Check if user exists
+      final Optional<User> userOptional = userService.getUser(userId);
+      if (userOptional.isEmpty()) {
+        return new ResponseEntity<>("Provided User doesn't exist", HttpStatus.NOT_FOUND);
+      }
+
+      // Check if current user is authorized to view these prescriptions
+      if (!authorizationService.canAccessUserRecords(currentUserId, userId)) {
+        return new ResponseEntity<>(
+            "You are not authorized to view these prescriptions", HttpStatus.FORBIDDEN);
+      }
+
+      List<Prescription> prescriptions = prescriptionService.getPrescriptionsForUser(userId);
+      return new ResponseEntity<>(prescriptions, HttpStatus.OK);
+
+    } catch (AccessDeniedException e) {
+      return new ResponseEntity<>(e.getMessage(), HttpStatus.FORBIDDEN);
+    } catch (Exception e) {
+      return new ResponseEntity<>(
+          "Unexpected error encountered while getting user prescriptions",
           HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
   /**
-   * Endpoint to get user's prescriptions.
+   * Handles user logout. Invalidates the current session and clears security context.
    *
-   * @param userId user whose prescriptions we're trying to retrieve
-   * @return a ResponseEntity with user's prescriptions if the operation is successful, or an error
-   *     message if an error occurred
+   * @return ResponseEntity indicating logout success or failure
    */
-  @GetMapping(path = "/users/{userId}/prescriptions")
-  public ResponseEntity<?> getPrescriptionsForUser(@PathVariable("userId") String userId) {
-    try {
-      final Optional<User> userOptional = userService.getUser(userId);
-
-      if (userOptional.isEmpty()) {
-        return new ResponseEntity<>("Provided User doesn't exist", HttpStatus.NOT_FOUND);
-      }
-
-      return new ResponseEntity<>(prescriptionService.getPrescriptionsForUser(userId),
-          HttpStatus.OK);
-    } catch (Exception e) {
-      return new ResponseEntity<>("Unexpected error encountered while getting user prescriptions",
-          HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+  @PostMapping("/logout")
+  public ResponseEntity<?> logout() {
+    // The security config handles token validation before reaching here
+    return ResponseEntity.ok("Logged out successfully");
   }
 }

@@ -12,18 +12,12 @@ import java.util.Date;
 import lombok.Data;
 import org.hibernate.annotations.UuidGenerator;
 
-
-/**
- * Model class to describe the "prescriptions" table.
- */
+/** Model class to describe the "prescriptions" table. */
 @Data
 @Entity
 @Table(name = "prescriptions")
 public class Prescription {
-  @Id
-  @UuidGenerator
-  @JsonProperty
-  private String prescriptionId;
+  @Id @UuidGenerator @JsonProperty private String prescriptionId;
 
   @ManyToOne
   @JoinColumn(name = "user_id", nullable = false)

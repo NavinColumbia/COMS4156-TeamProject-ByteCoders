@@ -7,15 +7,11 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-
-/**
- * Service operations around {@link com.bytecoders.pharmaid.repository.model.Prescription}.
- */
+/** Service operations around {@link com.bytecoders.pharmaid.repository.model.Prescription}. */
 @Service
 public class PrescriptionService {
 
-  @Autowired
-  private PrescriptionRepository prescriptionRepository;
+  @Autowired private PrescriptionRepository prescriptionRepository;
 
   /**
    * Create a new prescription.
@@ -45,7 +41,6 @@ public class PrescriptionService {
   public void deletePrescription(String prescriptionId) {
     prescriptionRepository.deleteById(prescriptionId);
   }
-
 
   public List<Prescription> getPrescriptionsForUser(String userId) {
     return prescriptionRepository.findAllByUserId(userId);

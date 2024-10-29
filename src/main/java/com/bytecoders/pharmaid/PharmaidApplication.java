@@ -3,10 +3,7 @@ package com.bytecoders.pharmaid;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-/**
- * Class contains all the startup logic for the application.
- *
- */
+/** Class contains all the startup logic for the application. */
 @SpringBootApplication
 public class PharmaidApplication {
 

@@ -7,14 +7,11 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-/**
- * Service operations around {@link com.bytecoders.pharmaid.repository.model.Medication}.
- */
+/** Service operations around {@link com.bytecoders.pharmaid.repository.model.Medication}. */
 @Service
 public class MedicationService {
 
-  @Autowired
-  private MedicationRepository medicationRepository;
+  @Autowired private MedicationRepository medicationRepository;
 
   public List<Medication> getAllMedications() {
     return medicationRepository.findAll();

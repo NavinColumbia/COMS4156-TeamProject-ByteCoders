@@ -6,9 +6,7 @@ import jakarta.validation.constraints.Positive;
 import java.util.Date;
 import lombok.Data;
 
-/**
- * Object to hold create prescription request body.
- */
+/** Request object for creating prescriptions. */
 @Data
 public class CreatePrescriptionRequest {
   @NotEmpty(message = "Medication id is required")

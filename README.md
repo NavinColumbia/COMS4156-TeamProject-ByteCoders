@@ -250,3 +250,7 @@ Steps to connect and populate the db with medications data:
 - View all configurations to ensure proper activation: `gcloud config configurations list`
 - View a Cloud SQL instance name: `gcloud sql instances describe [DB_INSTANCE] --format="value
 (connectionName)"` 
+
+### JWT
+- On Login, you receive JWT Token, use this to act on behalf of that user
+- Set Authorization Header to be 'Bearer...' to act on behalf of the user on subsequent requests

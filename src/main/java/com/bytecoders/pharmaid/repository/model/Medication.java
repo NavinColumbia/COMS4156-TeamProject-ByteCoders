@@ -8,17 +8,12 @@ import jakarta.persistence.Table;
 import lombok.Data;
 import org.hibernate.annotations.UuidGenerator;
 
-/**
- * Model class to describe the "medications" table.
- */
+/** Model class to describe the "medications" table. */
 @Data
 @Entity
 @Table(name = "medications")
 public class Medication {
-  @Id
-  @UuidGenerator
-  @JsonProperty
-  private String medicationId;
+  @Id @UuidGenerator @JsonProperty private String medicationId;
 
   @Column(name = "medication_name", nullable = false)
   @JsonProperty

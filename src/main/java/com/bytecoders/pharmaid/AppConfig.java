@@ -4,9 +4,7 @@ import com.bytecoders.pharmaid.util.PasswordUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/**
- * AppConfig with custom beans to inject.
- */
+/** AppConfig with custom beans to inject. */
 @Configuration
 public class AppConfig {
   @Bean

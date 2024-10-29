@@ -12,16 +12,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-/**
- * Tests for {@link com.bytecoders.pharmaid.service.MedicationService}.
- */
+/** Tests for {@link com.bytecoders.pharmaid.service.MedicationService}. */
 @ExtendWith(MockitoExtension.class)
 public class MedicationServiceTests {
-  @Mock
-  private MedicationRepository medicationRepository;
+  @Mock private MedicationRepository medicationRepository;
 
-  @InjectMocks
-  private MedicationService medicationService = new MedicationService();
+  @InjectMocks private MedicationService medicationService = new MedicationService();
 
   @Test
   public void testGetAllMedications() {

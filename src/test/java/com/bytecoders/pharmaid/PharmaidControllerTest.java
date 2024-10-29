@@ -1,11 +1,11 @@
-
 package com.bytecoders.pharmaid;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.bytecoders.pharmaid.repository.model.User;
 import com.bytecoders.pharmaid.repository.model.UserType;
@@ -14,6 +14,7 @@ import com.bytecoders.pharmaid.request.RegisterUserRequest;
 import com.bytecoders.pharmaid.security.JwtTokenProvider;
 import com.bytecoders.pharmaid.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,26 +25,23 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.Optional;
-
+/**
+ * Tests for user registration, login, and logout functionality.
+ * Validates the authentication flow and token management.
+ */
 @SpringBootTest
 @AutoConfigureMockMvc
 class PharmaidControllerTest {
 
-  @Autowired
-  private MockMvc mockMvc;
+  @Autowired private MockMvc mockMvc;
 
-  @Autowired
-  private ObjectMapper objectMapper;
+  @Autowired private ObjectMapper objectMapper;
 
-  @MockBean
-  private UserService userService;
+  @MockBean private UserService userService;
 
-  @MockBean
-  private JwtTokenProvider tokenProvider;
+  @MockBean private JwtTokenProvider tokenProvider;
 
-  @MockBean
-  private PasswordEncoder passwordEncoder;
+  @MockBean private PasswordEncoder passwordEncoder;
 
   private User testUser;
   private LoginUserRequest loginRequest;
@@ -75,9 +73,11 @@ class PharmaidControllerTest {
     when(tokenProvider.generateToken(testUser.getId())).thenReturn("test.jwt.token");
 
     // When & Then
-    mockMvc.perform(post("/login")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(loginRequest)))
+    mockMvc
+        .perform(
+            post("/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.token").value("Bearer test.jwt.token"))
         .andExpect(jsonPath("$.userId").value(testUser.getId()))
@@ -92,9 +92,11 @@ class PharmaidControllerTest {
     when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
 
     // When & Then
-    mockMvc.perform(post("/login")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(loginRequest)))
+    mockMvc
+        .perform(
+            post("/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest)))
         .andExpect(status().isUnauthorized())
         .andExpect(content().string("Invalid credentials"));
   }
@@ -105,39 +107,52 @@ class PharmaidControllerTest {
     when(userService.getUserByEmail("test@example.com")).thenReturn(Optional.empty());
 
     // When & Then
-    mockMvc.perform(post("/login")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(loginRequest)))
+    mockMvc
+        .perform(
+            post("/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest)))
         .andExpect(status().isUnauthorized())
         .andExpect(content().string("Invalid credentials"));
   }
 
-  // Updated logout tests
   @Test
-  void logout_Success() throws Exception {
+  void logout_ValidToken_Success() throws Exception {
     // Given
     when(tokenProvider.validateToken("valid.jwt.token")).thenReturn(true);
 
     // When & Then
-    mockMvc.perform(post("/logout")
-            .header("Authorization", "Bearer valid.jwt.token"))
+    mockMvc
+        .perform(post("/logout").header("Authorization", "Bearer valid.jwt.token"))
         .andExpect(status().isOk())
         .andExpect(content().string("Logged out successfully"));
   }
 
   @Test
-  void logout_InvalidToken() throws Exception {
+  void logout_InvalidToken_Unauthorized() throws Exception {
+    // Given
+    when(tokenProvider.validateToken("invalid.token")).thenReturn(false);
+
     // When & Then
-    mockMvc.perform(post("/logout")
-            .header("Authorization", "InvalidToken"))
-        .andExpect(status().isBadRequest())
-        .andExpect(content().string("Invalid token format"));
+    mockMvc
+        .perform(post("/logout").header("Authorization", "Bearer invalid.token"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(content().string("Invalid token"));
   }
 
   @Test
-  void logout_NoToken() throws Exception {
-    // When & Then
-    mockMvc.perform(post("/logout"))
-        .andExpect(status().isUnauthorized());
+  void logout_NoToken_Unauthorized() throws Exception {
+    mockMvc
+        .perform(post("/logout"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(content().string("Invalid or missing token"));
+  }
+
+  @Test
+  void logout_MalformedToken_Unauthorized() throws Exception {
+    mockMvc
+        .perform(post("/logout").header("Authorization", "malformed-token"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(content().string("Invalid or missing token"));
   }
 }

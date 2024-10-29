@@ -4,9 +4,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
-/**
- * Object to hold user login request body.
- */
+/** Object to hold user login request body. */
 @Data
 public class LoginUserRequest {
   @NotEmpty(message = "The email address is required")
