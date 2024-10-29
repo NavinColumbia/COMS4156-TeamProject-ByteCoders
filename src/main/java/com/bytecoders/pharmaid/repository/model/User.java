@@ -17,7 +17,10 @@ import org.hibernate.annotations.UuidGenerator;
 @Table(name = "users")
 public class User {
 
-  @Id @UuidGenerator @JsonProperty private String id;
+  @Id
+  @UuidGenerator
+  @JsonProperty
+  private String id;
 
   @Column(name = "email", nullable = false, unique = true)
   @JsonProperty

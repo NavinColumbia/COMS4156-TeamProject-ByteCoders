@@ -26,11 +26,14 @@ import org.springframework.dao.DataIntegrityViolationException;
 /** Tests for {@link com.bytecoders.pharmaid.service.UserService}. */
 @ExtendWith(MockitoExtension.class)
 public class UserServiceTests {
-  @Mock private UserRepository userRepository;
+  @Mock
+  private UserRepository userRepository;
 
-  @Mock private PasswordUtils passwordUtils;
+  @Mock
+  private PasswordUtils passwordUtils;
 
-  @InjectMocks private UserService userService = new UserService();
+  @InjectMocks
+  private UserService userService = new UserService();
 
   @Test
   public void testRegisterUser() {

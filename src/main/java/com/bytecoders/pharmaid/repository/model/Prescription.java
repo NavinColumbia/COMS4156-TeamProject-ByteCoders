@@ -17,7 +17,10 @@ import org.hibernate.annotations.UuidGenerator;
 @Entity
 @Table(name = "prescriptions")
 public class Prescription {
-  @Id @UuidGenerator @JsonProperty private String prescriptionId;
+  @Id
+  @UuidGenerator
+  @JsonProperty
+  private String prescriptionId;
 
   @ManyToOne
   @JoinColumn(name = "user_id", nullable = false)
