@@ -1,5 +1,6 @@
 package com.bytecoders.pharmaid.service;
 
+import com.bytecoders.pharmaid.exception.AuthenticationException;
 import com.bytecoders.pharmaid.exception.NotAuthorizedException;
 import com.bytecoders.pharmaid.exception.ResourceNotFoundException;
 import com.bytecoders.pharmaid.exception.UserNotFoundException;
@@ -19,19 +20,16 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 /**
- * Service class providing helper functions to manage sharing requests and permissions.
- * Handles creation, acceptance, denial, and revocation of sharing requests between users.
+ * Service class providing helper functions to manage sharing requests and permissions. Handles
+ * creation, acceptance, denial, and revocation of sharing requests between users.
  */
 @Slf4j
 @Service
 public class SharingPermissionService {
 
-  @Autowired
-  private SharingPermissionRepository sharingPermissionRepository;
+  @Autowired private SharingPermissionRepository sharingPermissionRepository;
 
-  @Autowired
-  private UserRepository userRepository;
-
+  @Autowired private UserRepository userRepository;
 
   /**
    * Creates a new sharing request between users.
@@ -43,8 +41,10 @@ public class SharingPermissionService {
    * @throws IllegalArgumentException if invalid request parameters
    */
   public SharingPermission createSharingRequest(String ownerId, SharingRequest request) {
-    User owner = userRepository.findById(ownerId)
-        .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + ownerId));
+    User owner =
+        userRepository
+            .findById(ownerId)
+            .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + ownerId));
 
     String requesterId = getCurrentUserId();
 
@@ -52,16 +52,15 @@ public class SharingPermissionService {
       throw new IllegalArgumentException("Cannot create sharing permission with yourself");
     }
 
-    User requester = userRepository.findById(requesterId)
-        .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + requesterId));
+    User requester =
+        userRepository
+            .findById(requesterId)
+            .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + requesterId));
 
     // Check if permission already exists
-    boolean permissionExists = sharingPermissionRepository
-        .existsByOwnerAndSharedWithUserAndPermissionTypeAndStatus(
-            owner,
-            requester,
-            request.getPermissionType(),
-            SharingPermissionStatus.PENDING);
+    boolean permissionExists =
+        sharingPermissionRepository.existsByOwnerAndSharedWithUserAndPermissionTypeAndStatus(
+            owner, requester, request.getPermissionType(), SharingPermissionStatus.PENDING);
 
     if (permissionExists) {
       throw new IllegalArgumentException("A pending sharing request already exists");
@@ -76,7 +75,6 @@ public class SharingPermissionService {
 
     return sharingPermissionRepository.save(permission);
   }
-
 
   /**
    * Accepts a pending sharing request.
@@ -94,9 +92,13 @@ public class SharingPermissionService {
       throw new NotAuthorizedException("Not authorized to accept this request");
     }
 
-    SharingPermission permission = sharingPermissionRepository.findById(permissionId)
-        .orElseThrow(() -> new ResourceNotFoundException(
-            "Sharing request not found with ID: " + permissionId));
+    SharingPermission permission =
+        sharingPermissionRepository
+            .findById(permissionId)
+            .orElseThrow(
+                () ->
+                    new ResourceNotFoundException(
+                        "Sharing request not found with ID: " + permissionId));
 
     if (!permission.getOwner().getId().equals(ownerId)) {
       throw new NotAuthorizedException("Not authorized to accept this request");
@@ -109,7 +111,6 @@ public class SharingPermissionService {
     permission.setStatus(SharingPermissionStatus.ACCEPTED);
     return sharingPermissionRepository.save(permission);
   }
-
 
   /**
    * Denies a pending sharing request.
@@ -127,9 +128,13 @@ public class SharingPermissionService {
       throw new NotAuthorizedException("Not authorized to deny this request");
     }
 
-    SharingPermission permission = sharingPermissionRepository.findById(permissionId)
-        .orElseThrow(() -> new ResourceNotFoundException(
-            "Sharing request not found with ID: " + permissionId));
+    SharingPermission permission =
+        sharingPermissionRepository
+            .findById(permissionId)
+            .orElseThrow(
+                () ->
+                    new ResourceNotFoundException(
+                        "Sharing request not found with ID: " + permissionId));
 
     if (!permission.getOwner().getId().equals(ownerId)) {
       throw new NotAuthorizedException("Not authorized to deny this request");
@@ -142,8 +147,6 @@ public class SharingPermissionService {
     permission.setStatus(SharingPermissionStatus.DENIED);
     return sharingPermissionRepository.save(permission);
   }
-
-
 
   /**
    * Revokes an existing sharing permission.
@@ -159,9 +162,13 @@ public class SharingPermissionService {
       throw new NotAuthorizedException("Not authorized to revoke this permission");
     }
 
-    SharingPermission permission = sharingPermissionRepository.findById(permissionId)
-        .orElseThrow(() -> new ResourceNotFoundException(
-            "Sharing permission not found with ID: " + permissionId));
+    SharingPermission permission =
+        sharingPermissionRepository
+            .findById(permissionId)
+            .orElseThrow(
+                () ->
+                    new ResourceNotFoundException(
+                        "Sharing permission not found with ID: " + permissionId));
 
     if (!permission.getOwner().getId().equals(ownerId)) {
       throw new NotAuthorizedException("Not authorized to revoke this permission");
@@ -178,18 +185,20 @@ public class SharingPermissionService {
    * Retrieves the ID of the currently authenticated user.
    *
    * @return The ID of the current user.
-   * @throws RuntimeException if no user is authenticated.
+   * @throws AuthenticationException if no user is authenticated.
    */
-  public String getCurrentUserId() {
+  public static String getCurrentUserId() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    log.debug(
-        "Authentication principal type: {}",
-        authentication != null ? authentication.getPrincipal().getClass() : "null");
-
-    if (authentication != null && authentication.getPrincipal() instanceof User) {
-      User user = (User) authentication.getPrincipal();
-      return user.getId();
+    if (authentication != null && authentication.isAuthenticated()) {
+      Object principal = authentication.getPrincipal();
+      if (principal instanceof User) {
+        return ((User) principal).getId();
+      } else if (principal instanceof org.springframework.security.core.userdetails.User) {
+        return ((org.springframework.security.core.userdetails.User) principal).getUsername();
+      } else if (principal instanceof String) {
+        return (String) principal;
+      }
     }
-    throw new RuntimeException("User not authenticated");
+    throw new AuthenticationException("User not authenticated");
   }
 }

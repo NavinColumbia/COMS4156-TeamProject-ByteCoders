@@ -1,5 +1,6 @@
 package com.bytecoders.pharmaid;
 
+import com.bytecoders.pharmaid.exception.AuthenticationException;
 import com.bytecoders.pharmaid.exception.NotAuthorizedException;
 import com.bytecoders.pharmaid.exception.ResourceNotFoundException;
 import com.bytecoders.pharmaid.exception.UserNotFoundException;
@@ -73,7 +74,14 @@ public class SharingController {
       SharingPermission permission = sharingPermissionService.createSharingRequest(userId, request);
       return ResponseEntity.status(HttpStatus.CREATED)
           .body(convertToResponse(permission));
-    } catch (UserNotFoundException e) {
+    } catch (AuthenticationException e) {
+      log.debug("User not Authenticated: {}", e.getMessage());
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+          .body(ErrorResponse.builder()
+              .message(e.getMessage())
+              .timestamp(LocalDateTime.now())
+              .build());
+    }catch (UserNotFoundException e) {
       log.debug("User not found: {}", e.getMessage());
       return ResponseEntity.status(HttpStatus.NOT_FOUND)
           .body(ErrorResponse.builder()
@@ -113,7 +121,14 @@ public class SharingController {
       SharingPermission permission = sharingPermissionService
           .acceptSharingRequest(userId, requestId);
       return ResponseEntity.ok(convertToResponse(permission));
-    } catch (ResourceNotFoundException e) {
+    } catch (AuthenticationException e) {
+      log.debug("User not Authenticated: {}", e.getMessage());
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+          .body(ErrorResponse.builder()
+              .message(e.getMessage())
+              .timestamp(LocalDateTime.now())
+              .build());
+    }catch (ResourceNotFoundException e) {
       log.debug("Resource not found: {}", e.getMessage());
       return ResponseEntity.status(HttpStatus.NOT_FOUND)
           .body(ErrorResponse.builder()
@@ -153,22 +168,29 @@ public class SharingController {
       SharingPermission permission = sharingPermissionService
           .denySharingRequest(userId, permissionId);
       return ResponseEntity.ok(convertToResponse(permission));
-    } catch (ResourceNotFoundException e) {
-      log.debug("Resource not found: {}", e.getMessage());
+    } catch (AuthenticationException e) {
+      log.debug("User not Authenticated: {} ", e.getMessage());
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+          .body(ErrorResponse.builder()
+              .message(e.getMessage())
+              .timestamp(LocalDateTime.now())
+              .build());
+    }catch (ResourceNotFoundException e) {
+      log.debug("Resource not found: {} ", e.getMessage());
       return ResponseEntity.status(HttpStatus.NOT_FOUND)
           .body(ErrorResponse.builder()
               .message(e.getMessage())
               .timestamp(LocalDateTime.now())
               .build());
     } catch (NotAuthorizedException e) {
-      log.debug("Not authorized: {}", e.getMessage());
+      log.debug("Not authorized: {} ", e.getMessage());
       return ResponseEntity.status(HttpStatus.FORBIDDEN)
           .body(ErrorResponse.builder()
               .message(e.getMessage())
               .timestamp(LocalDateTime.now())
               .build());
     } catch (Exception e) {
-      log.error("Error denying sharing request", e);
+      log.error("Error denying sharing request ", e);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
           .body(ErrorResponse.builder()
               .message("An error occurred while denying sharing request")
@@ -192,22 +214,29 @@ public class SharingController {
     try {
       sharingPermissionService.revokeSharingPermission(userId, permissionId);
       return ResponseEntity.noContent().build();
-    } catch (ResourceNotFoundException e) {
-      log.debug("Resource not found: {}", e.getMessage());
+    } catch (AuthenticationException e) {
+      log.debug("User not Authenticated : {}", e.getMessage());
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+          .body(ErrorResponse.builder()
+              .message(e.getMessage())
+              .timestamp(LocalDateTime.now())
+              .build());
+    }catch (ResourceNotFoundException e) {
+      log.debug("Resource not found : {}", e.getMessage());
       return ResponseEntity.status(HttpStatus.NOT_FOUND)
           .body(ErrorResponse.builder()
               .message(e.getMessage())
               .timestamp(LocalDateTime.now())
               .build());
     } catch (NotAuthorizedException e) {
-      log.debug("Not authorized: {}", e.getMessage());
+      log.debug("Not authorized : {}", e.getMessage());
       return ResponseEntity.status(HttpStatus.FORBIDDEN)
           .body(ErrorResponse.builder()
               .message(e.getMessage())
               .timestamp(LocalDateTime.now())
               .build());
     } catch (Exception e) {
-      log.error("Error revoking sharing permission", e);
+      log.error("Error revoking sharing permission ", e);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
           .body(ErrorResponse.builder()
               .message("An error occurred while revoking sharing permission")
@@ -231,18 +260,22 @@ public class SharingController {
    * Retrieves the ID of the currently authenticated user.
    *
    * @return The ID of the current user.
-   * @throws RuntimeException if no user is authenticated.
+   * @throws AuthenticationException if no user is authenticated.
    */
-  private String getCurrentUserId() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    log.debug(
-        "Authentication principal type: {}",
-        authentication != null ? authentication.getPrincipal().getClass() : "null");
-
-    if (authentication != null && authentication.getPrincipal() instanceof User) {
-      User user = (User) authentication.getPrincipal();
-      return user.getId();
+  public static String getCurrentUserId() {
+      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+      if (authentication != null && authentication.isAuthenticated()) {
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof User) {
+          return ((User) principal).getId();
+        } else if (principal instanceof org.springframework.security.core.userdetails.User) {
+          return ((org.springframework.security.core.userdetails.User) principal).getUsername();
+        } else if (principal instanceof String) {
+          return (String) principal;
+        }
+      }
+      throw new AuthenticationException("User not authenticated");
     }
-    throw new RuntimeException("User not authenticated");
-  }
+
+
 }

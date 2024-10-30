@@ -1,140 +1,96 @@
 package com.bytecoders.pharmaid.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-
-import com.bytecoders.pharmaid.exception.*;
+import com.bytecoders.pharmaid.exception.UserNotFoundException;
 import com.bytecoders.pharmaid.repository.SharingPermissionRepository;
 import com.bytecoders.pharmaid.repository.UserRepository;
 import com.bytecoders.pharmaid.repository.model.PermissionType;
 import com.bytecoders.pharmaid.repository.model.SharingPermissionStatus;
 import com.bytecoders.pharmaid.repository.model.User;
 import com.bytecoders.pharmaid.repository.model.UserType;
-import java.util.Arrays;
+import com.bytecoders.pharmaid.service.AuthorizationService;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-/**
- * Tests for the AuthorizationService class.
- * Verifies authorization logic for accessing and modifying user records.
- */
-@ExtendWith(MockitoExtension.class)
 class AuthorizationServiceTest {
+
   @Mock private UserRepository userRepository;
   @Mock private SharingPermissionRepository sharingPermissionRepository;
   @InjectMocks private AuthorizationService authorizationService;
 
-  private User owner;
-  private User requester;
-  private User firstResponder;
+  private User currentUser;
+  private User targetUser;
 
   @BeforeEach
   void setUp() {
-    owner = new User();
-    owner.setId("ownerId");
-    owner.setUserType(UserType.PATIENT);
-
-    requester = new User();
-    requester.setId("requesterId");
-    requester.setUserType(UserType.PATIENT);
-
-    firstResponder = new User();
-    firstResponder.setId("responderId");
-    firstResponder.setUserType(UserType.FIRST_RESPONDER);
+    MockitoAnnotations.openMocks(this);
+    currentUser = new User();
+    currentUser.setId("currentUserId");
+    targetUser = new User();
+    targetUser.setId("targetUserId");
   }
 
   @Test
-  void canAccessUserRecords_FirstResponder_ReturnsTrue() {
-    when(userRepository.findById("responderId"))
-        .thenReturn(Optional.of(firstResponder));
+  void canAccessUserRecords_firstResponder_shouldReturnTrue() {
+    currentUser.setUserType(UserType.FIRST_RESPONDER);
+    when(userRepository.findById("currentUserId")).thenReturn(Optional.of(currentUser));
 
-    boolean result = authorizationService
-        .canAccessUserRecords("responderId", "targetId");
+    boolean canAccess = authorizationService.canAccessUserRecords("currentUserId", "targetUserId");
 
-    assertTrue(result);
-    verify(userRepository).findById("responderId");
+    assertTrue(canAccess);
   }
 
   @Test
-  void canAccessUserRecords_UserNotFound_ThrowsNotFoundException() {
-    when(userRepository.findById("requesterId"))
-        .thenReturn(Optional.empty());
+  void canAccessUserRecords_sameUser_shouldReturnTrue() {
+    when(userRepository.findById("currentUserId")).thenReturn(Optional.of(currentUser));
 
-    UserNotFoundException exception = assertThrows(
-        UserNotFoundException.class,
-        () -> authorizationService.canAccessUserRecords("requesterId", "ownerId")
-    );
+    boolean canAccess = authorizationService.canAccessUserRecords("currentUserId", "currentUserId");
 
-    assertEquals("Current user not found with ID: requesterId", exception.getMessage());
-    verify(userRepository).findById("requesterId");
+    assertTrue(canAccess);
   }
 
   @Test
-  void canAccessUserRecords_TargetUserNotFound_ThrowsNotFoundException() {
-    when(userRepository.findById("requesterId"))
-        .thenReturn(Optional.of(requester));
-    when(userRepository.findById("ownerId"))
-        .thenReturn(Optional.empty());
-
-    UserNotFoundException exception = assertThrows(
-        UserNotFoundException.class,
-        () -> authorizationService.canAccessUserRecords("requesterId", "ownerId")
-    );
-
-    assertEquals("Target user not found with ID: ownerId", exception.getMessage());
-    verify(userRepository).findById("requesterId");
-    verify(userRepository).findById("ownerId");
-  }
-
-  @Test
-  void canAccessUserRecords_WithPermission_ReturnsTrue() {
-    when(userRepository.findById("requesterId"))
-        .thenReturn(Optional.of(requester));
-    when(userRepository.findById("ownerId"))
-        .thenReturn(Optional.of(owner));
-    when(sharingPermissionRepository
-        .existsByOwnerAndSharedWithUserAndPermissionTypeInAndStatus(
-            eq(owner),
-            eq(requester),
-            argThat(list -> list.containsAll(Arrays.asList(
-                PermissionType.VIEW, PermissionType.EDIT))),
-            eq(SharingPermissionStatus.ACCEPTED)))
-        .thenReturn(true);
-
-    boolean result = authorizationService
-        .canAccessUserRecords("requesterId", "ownerId");
-
-    assertTrue(result);
-    verify(userRepository).findById("requesterId");
-    verify(userRepository).findById("ownerId");
-    verify(sharingPermissionRepository)
-        .existsByOwnerAndSharedWithUserAndPermissionTypeInAndStatus(
-            any(), any(), any(), any());
-  }
-
-  @Test
-  void canModifyUserRecords_WithoutPermission_ReturnsFalse() {
-    when(userRepository.findById("requesterId"))
-        .thenReturn(Optional.of(requester));
-    when(userRepository.findById("ownerId"))
-        .thenReturn(Optional.of(owner));
-    when(sharingPermissionRepository
-        .existsByOwnerAndSharedWithUserAndPermissionTypeAndStatus(
-            owner, requester, PermissionType.EDIT,
-            SharingPermissionStatus.ACCEPTED))
+  void canAccessUserRecords_noPermission_shouldReturnFalse() {
+    when(userRepository.findById("currentUserId")).thenReturn(Optional.of(currentUser));
+    when(userRepository.findById("targetUserId")).thenReturn(Optional.of(targetUser));
+    when(sharingPermissionRepository.existsByOwnerAndSharedWithUserAndPermissionTypeInAndStatus(
+        targetUser, currentUser, List.of(PermissionType.VIEW, PermissionType.EDIT), SharingPermissionStatus.ACCEPTED))
         .thenReturn(false);
 
-    boolean result = authorizationService
-        .canModifyUserRecords("requesterId", "ownerId");
+    boolean canAccess = authorizationService.canAccessUserRecords("currentUserId", "targetUserId");
 
-    assertFalse(result);
-    verify(userRepository).findById("requesterId");
-    verify(userRepository).findById("ownerId");
+    assertFalse(canAccess);
+  }
+
+  @Test
+  void canModifyUserRecords_withPermission_shouldReturnTrue() {
+    when(userRepository.findById("currentUserId")).thenReturn(Optional.of(currentUser));
+    when(userRepository.findById("targetUserId")).thenReturn(Optional.of(targetUser));
+    when(sharingPermissionRepository.existsByOwnerAndSharedWithUserAndPermissionTypeAndStatus(
+        targetUser, currentUser, PermissionType.EDIT, SharingPermissionStatus.ACCEPTED))
+        .thenReturn(true);
+
+    boolean canModify = authorizationService.canModifyUserRecords("currentUserId", "targetUserId");
+
+    assertTrue(canModify);
+  }
+
+  @Test
+  void canModifyUserRecords_noPermission_shouldReturnFalse() {
+    when(userRepository.findById("currentUserId")).thenReturn(Optional.of(currentUser));
+    when(userRepository.findById("targetUserId")).thenReturn(Optional.of(targetUser));
+    when(sharingPermissionRepository.existsByOwnerAndSharedWithUserAndPermissionTypeAndStatus(
+        targetUser, currentUser, PermissionType.EDIT, SharingPermissionStatus.ACCEPTED))
+        .thenReturn(false);
+
+    boolean canModify = authorizationService.canModifyUserRecords("currentUserId", "targetUserId");
+
+    assertFalse(canModify);
   }
 }

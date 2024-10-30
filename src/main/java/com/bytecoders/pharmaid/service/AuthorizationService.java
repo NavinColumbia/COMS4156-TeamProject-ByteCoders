@@ -1,5 +1,6 @@
 package com.bytecoders.pharmaid.service;
 
+import com.bytecoders.pharmaid.exception.UserNotFoundException;
 import com.bytecoders.pharmaid.repository.SharingPermissionRepository;
 import com.bytecoders.pharmaid.repository.UserRepository;
 import com.bytecoders.pharmaid.repository.model.PermissionType;
@@ -28,7 +29,7 @@ public class AuthorizationService {
    * @param currentUserId The ID of the user requesting access.
    * @param targetUserId The ID of the user whose records are being accessed.
    * @return boolean True if access is allowed, false otherwise.
-   * @throws RuntimeException if either user is not found.
+   * @throws UserNotFoundException if either user is not found.
    */
   public boolean canAccessUserRecords(String currentUserId, String targetUserId) {
     // Get current user
@@ -50,7 +51,7 @@ public class AuthorizationService {
     User targetUser =
         userRepository
             .findById(targetUserId)
-            .orElseThrow(() -> new RuntimeException("Target user not found"));
+            .orElseThrow(() -> new UserNotFoundException("Target user not found"));
 
     List<PermissionType> allowedPermissions =
         Arrays.asList(PermissionType.VIEW, PermissionType.EDIT);
@@ -68,7 +69,7 @@ public class AuthorizationService {
    * @param currentUserId The ID of the user requesting modification.
    * @param targetUserId The ID of the user whose records are being modified.
    * @return boolean True if modification is allowed, false otherwise.
-   * @throws RuntimeException if either user is not found.
+   * @throws UserNotFoundException if either user is not found.
    */
   public boolean canModifyUserRecords(String currentUserId, String targetUserId) {
 
@@ -79,12 +80,12 @@ public class AuthorizationService {
     User currentUser =
         userRepository
             .findById(currentUserId)
-            .orElseThrow(() -> new RuntimeException("Current user not found"));
+            .orElseThrow(() -> new UserNotFoundException("Current user not found"));
 
     User targetUser =
         userRepository
             .findById(targetUserId)
-            .orElseThrow(() -> new RuntimeException("Target user not found"));
+            .orElseThrow(() -> new UserNotFoundException("Target user not found"));
 
     PermissionType requiredPermission = PermissionType.EDIT;
 

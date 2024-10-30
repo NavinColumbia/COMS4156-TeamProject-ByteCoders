@@ -169,17 +169,19 @@ public class PharmaidController {
     }
   }
 
-  private String getCurrentUserId() {
+  public static String getCurrentUserId() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    log.debug(
-        "Authentication principal type: {}",
-        authentication != null ? authentication.getPrincipal().getClass() : "null");
-
-    if (authentication != null && authentication.getPrincipal() instanceof User) {
-      User user = (User) authentication.getPrincipal();
-      return user.getId();
+    if (authentication != null && authentication.isAuthenticated()) {
+      Object principal = authentication.getPrincipal();
+      if (principal instanceof User) {
+        return ((User) principal).getId();
+      } else if (principal instanceof org.springframework.security.core.userdetails.User) {
+        return ((org.springframework.security.core.userdetails.User) principal).getUsername();
+      } else if (principal instanceof String) {
+        return (String) principal;
+      }
     }
-    throw new RuntimeException("User not authenticated");
+    throw new AuthenticationException("User not authenticated");
   }
 
   /**
