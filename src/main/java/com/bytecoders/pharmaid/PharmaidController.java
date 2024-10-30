@@ -1,11 +1,15 @@
 package com.bytecoders.pharmaid;
 
+import com.bytecoders.pharmaid.exception.AuthenticationException;
 import com.bytecoders.pharmaid.repository.model.Medication;
 import com.bytecoders.pharmaid.repository.model.Prescription;
 import com.bytecoders.pharmaid.repository.model.User;
 import com.bytecoders.pharmaid.request.CreatePrescriptionRequest;
 import com.bytecoders.pharmaid.request.LoginUserRequest;
 import com.bytecoders.pharmaid.request.RegisterUserRequest;
+import com.bytecoders.pharmaid.response.ErrorResponse;
+import com.bytecoders.pharmaid.response.LoginResponse;
+import com.bytecoders.pharmaid.response.RegistrationResponse;
 import com.bytecoders.pharmaid.security.JwtTokenProvider;
 import com.bytecoders.pharmaid.service.AuthorizationService;
 import com.bytecoders.pharmaid.service.MedicationService;
@@ -13,6 +17,7 @@ import com.bytecoders.pharmaid.service.PrescriptionService;
 import com.bytecoders.pharmaid.service.SharingPermissionService;
 import com.bytecoders.pharmaid.service.UserService;
 import jakarta.validation.Valid;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,14 +72,11 @@ public class PharmaidController {
    * @param request the registration request
    * @return ResponseEntity with registration result
    */
+
   @PostMapping("/register")
   public ResponseEntity<?> register(@Valid @RequestBody RegisterUserRequest request) {
     try {
-      // Let's add some debug logging
-      log.debug(
-          "Registering user with email: {} and type: {}",
-          request.getEmail(),
-          request.getUserType());
+      log.debug("Registering user with email: {}", request.getEmail());
 
       User user = new User();
       user.setEmail(request.getEmail());
@@ -82,14 +84,29 @@ public class PharmaidController {
       user.setUserType(request.getUserType());
 
       User savedUser = userService.createUser(user);
-      log.debug("User registered successfully with id: {}", savedUser.getId());
 
-      return new ResponseEntity<>("User registered successfully", HttpStatus.CREATED);
+      return ResponseEntity.status(HttpStatus.CREATED)
+          .body(RegistrationResponse.builder()
+              .userId(savedUser.getId())
+              .email(savedUser.getEmail())
+              .userType(savedUser.getUserType())
+              .message("Registration successful. Please login to continue.")
+              .build());
+
     } catch (DataIntegrityViolationException e) {
-      return new ResponseEntity<>("User already exists", HttpStatus.BAD_REQUEST);
+      log.debug("Registration failed - user already exists with email: {}", request.getEmail());
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+          .body(ErrorResponse.builder()
+              .message("User already exists with this email")
+              .timestamp(LocalDateTime.now())
+              .build());
     } catch (Exception e) {
       log.error("Error during registration", e);
-      return new ResponseEntity<>("Registration failed", HttpStatus.INTERNAL_SERVER_ERROR);
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(ErrorResponse.builder()
+              .message("Registration failed")
+              .timestamp(LocalDateTime.now())
+              .build());
     }
   }
 
@@ -102,38 +119,35 @@ public class PharmaidController {
   @PostMapping("/login")
   public ResponseEntity<?> login(@Valid @RequestBody LoginUserRequest request) {
     try {
-      log.debug("Attempting login for email: {}", request.getEmail());
+      User user = userService.getUserByEmail(request.getEmail())
+          .orElseThrow(() -> new AuthenticationException("Invalid credentials"));
 
-      // First find user by email
-      Optional<User> userOpt = userService.getUserByEmail(request.getEmail());
-
-      if (userOpt.isEmpty()) {
-        log.debug("User not found with email: {}", request.getEmail());
-        return new ResponseEntity<>("Invalid credentials", HttpStatus.UNAUTHORIZED);
-      }
-
-      User user = userOpt.get();
-
-      // Verify password
       if (!passwordEncoder.matches(request.getPassword(), user.getHashedPassword())) {
-        log.debug("Invalid password for user: {}", request.getEmail());
-        return new ResponseEntity<>("Invalid credentials", HttpStatus.UNAUTHORIZED);
+        throw new AuthenticationException("Invalid credentials");
       }
 
-      // Generate token
       String token = tokenProvider.generateToken(user.getId());
 
-      Map<String, Object> response = new HashMap<>();
-      response.put("token", "Bearer " + token);
-      response.put("userId", user.getId());
-      response.put("email", user.getEmail());
-      response.put("userType", user.getUserType());
+      return ResponseEntity.ok(LoginResponse.builder()
+          .token("Bearer " + token)
+          .userId(user.getId())
+          .email(user.getEmail())
+          .userType(user.getUserType())
+          .build());
 
-      log.debug("Login successful for user: {}", request.getEmail());
-      return ResponseEntity.ok(response);
+    } catch (AuthenticationException e) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+          .body(ErrorResponse.builder()
+              .message("Invalid email or password")
+              .timestamp(LocalDateTime.now())
+              .build());
     } catch (Exception e) {
-      log.error("Error during login", e);
-      return new ResponseEntity<>("Login failed", HttpStatus.INTERNAL_SERVER_ERROR);
+      log.error("Login error", e);
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(ErrorResponse.builder()
+              .message("An unexpected error occurred")
+              .timestamp(LocalDateTime.now())
+              .build());
     }
   }
 
