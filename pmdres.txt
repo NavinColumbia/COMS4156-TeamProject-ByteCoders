@@ -1,2 +1,0 @@
-src/main/java/com/bytecoders/pharmaid/PharmaidApplication.java:11:	UseUtilityClass:	This utility class has a non-private constructor
-src/main/java/com/bytecoders/pharmaid/PharmaidController.java:12:	UnnecessaryImport:	Unused import 'com.fasterxml.jackson.core.JsonProcessingException'
