@@ -1,6 +1,7 @@
 package com.bytecoders.pharmaid;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -11,6 +12,7 @@ import com.bytecoders.pharmaid.repository.model.User;
 import com.bytecoders.pharmaid.request.CreatePrescriptionRequest;
 import com.bytecoders.pharmaid.request.LoginUserRequest;
 import com.bytecoders.pharmaid.request.RegisterUserRequest;
+import com.bytecoders.pharmaid.request.UpdatePrescriptionRequest;
 import com.bytecoders.pharmaid.service.MedicationService;
 import com.bytecoders.pharmaid.service.PrescriptionService;
 import com.bytecoders.pharmaid.service.UserService;
@@ -173,6 +175,40 @@ public class PharmaidContollerTests {
     ResponseEntity<?> response = testController.addPrescription(userId, request);
     assertEquals(HttpStatus.CREATED, response.getStatusCode());
     assertEquals(mockPrescription, response.getBody());
+  }
+
+  /**
+   * Test for updating a prescription successfully.
+   */
+  @Test
+  void testUpdatePrescriptionSuccess() {
+
+    User mockUser = new User();
+    String userId = "userId";
+    mockUser.setId(userId);
+
+    Prescription mockPrescription = new Prescription();
+    String prescriptionId = "prescriptionId";
+    mockPrescription.setUser(mockUser);
+    mockPrescription.setPrescriptionId(prescriptionId);
+    mockPrescription.setEndDate(new Date());
+    mockPrescription.setIsActive(true);
+
+    when(userService.getUser(userId)).thenReturn(Optional.of(mockUser));
+    when(prescriptionService.getPrescriptionById(prescriptionId)).thenReturn(Optional.of(mockPrescription));
+    when(prescriptionService.updatePrescription(any(Prescription.class))).thenReturn(mockPrescription);
+
+    UpdatePrescriptionRequest request = new UpdatePrescriptionRequest();
+    request.setEndDate(new Date());
+    request.setIsActive(false);
+
+    ResponseEntity<?> response = testController.updateUsersPrescription(userId, prescriptionId, request);
+    assertEquals(HttpStatus.OK, response.getStatusCode());
+   
+    Prescription updatedPrescription = (Prescription) response.getBody();
+    assertNotNull(updatedPrescription);
+    assertEquals(request.getIsActive(), updatedPrescription.getIsActive());
+    assertEquals(request.getEndDate(), updatedPrescription.getEndDate());
   }
 
   /**
