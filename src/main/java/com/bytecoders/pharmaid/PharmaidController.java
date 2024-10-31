@@ -41,6 +41,9 @@ public class PharmaidController {
   @Autowired
   private PrescriptionService prescriptionService;
 
+  private static final String USER_ID = "userId";
+  private static final String PRESCRIPTION_ID = "prescriptionID";
+
   /**
    * Basic hello endpoint for testing.
    *
@@ -78,12 +81,12 @@ public class PharmaidController {
    *     message if the deletion is unsuccessful
    */
   @DeleteMapping(path = "/users/{userId}")
-  public ResponseEntity<?> delete(@PathVariable("userId") String userId) {
+  public ResponseEntity<?> delete(@PathVariable(USER_ID) String userId) {
     try {
       final Optional<User> userOptional = userService.getUser(userId);
 
       if (userOptional.isEmpty()) {
-        return new ResponseEntity<>("Provided User doesn't exist", HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>("Provided user doesn't exist", HttpStatus.NOT_FOUND);
       }
 
       List<Prescription> userPrescriptions = prescriptionService.getPrescriptionsForUser(userId);
@@ -149,7 +152,7 @@ public class PharmaidController {
    *     or an error message if an error occurred
    */
   @PostMapping(path = "/users/{userId}/prescriptions")
-  public ResponseEntity<?> addPrescription(@PathVariable("userId") String userId,
+  public ResponseEntity<?> addPrescription(@PathVariable(USER_ID) String userId,
       @RequestBody @Valid CreatePrescriptionRequest request) {
     try {
       final User user = userService.getUser(userId);
@@ -185,15 +188,15 @@ public class PharmaidController {
    */
   @PatchMapping(path = "/users/{userId}/prescriptions/{prescriptionId}")
   public ResponseEntity<?> updateUsersPrescription(
-    @PathVariable("userId") String userId,
-    @PathVariable("prescriptionId") String prescriptionId,
-    @RequestBody @Valid UpdatePrescriptionRequest request) {
-      try {
-        // check if user exists
-        userService.getUser(userId);
+      @PathVariable(USER_ID) String userId,
+      @PathVariable(PRESCRIPTION_ID) String prescriptionId,
+      @RequestBody @Valid UpdatePrescriptionRequest request) {
+    try {
+      final Optional<User> userOptional = userService.getUser(userId);
 
-        // check if prescription exists
-        prescriptionService.getPrescription(prescriptionId);
+      if (userOptional.isEmpty()) {
+        return new ResponseEntity<>("Provided User does not exist", HttpStatus.NOT_FOUND);
+      }
 
         // edit here!!!! 
         if (prescriptionOptional.isEmpty() 
@@ -230,7 +233,7 @@ public class PharmaidController {
    *     error message if an error occurred
    */
   @GetMapping(path = "/users/{userId}/prescriptions")
-  public ResponseEntity<?> getPrescriptionsForUser(@PathVariable("userId") String userId) {
+  public ResponseEntity<?> getPrescriptionsForUser(@PathVariable(USER_ID) String userId) {
     try {
       // check if user exists
       userService.getUser(userId);
@@ -255,13 +258,13 @@ public class PharmaidController {
    */
   @DeleteMapping(path = "/users/{userId}/prescriptions/{prescriptionId}")
   public ResponseEntity<?> removePrescription(
-    @PathVariable("userId") String userId, 
-    @PathVariable("prescriptionId") String prescriptionId) {
-      try {
-        final Optional<User> userOptional = userService.getUser(userId);
+      @PathVariable(USER_ID) String userId, 
+      @PathVariable(PRESCRIPTION_ID) String prescriptionId) {
+    try {
+      final Optional<User> userOptional = userService.getUser(userId);
 
       if (userOptional.isEmpty()) {
-        return new ResponseEntity<>("Provided User doesn't exist", HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>("User doesn't exist", HttpStatus.NOT_FOUND);
       }
 
       final Optional<Prescription> pOptional 
