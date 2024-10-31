@@ -36,7 +36,7 @@ public class AuthorizationService {
     User currentUser =
         userRepository
             .findById(currentUserId)
-            .orElseThrow(() -> new RuntimeException("Current user not found"));
+            .orElseThrow(() -> new UserNotFoundException("Current user not found"));
 
     // First responders can access any records
     if (currentUser.getUserType() == UserType.FIRST_RESPONDER) {
