@@ -30,8 +30,9 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * This class contains all the API routes for the system.
  */
-@RestController  
+@RestController
 public class PharmaidController {
+
   @Autowired
   private UserService userService;
 
@@ -45,11 +46,11 @@ public class PharmaidController {
   private static final String PRESCRIPTION_ID = "prescriptionID";
 
   /**
-   * Basic hello endpoint for testing. 
+   * Basic hello endpoint for testing.
    *
-   * @return A String 
+   * @return A String
    */
-  @GetMapping({ "/", "/hello"})
+  @GetMapping({"/hello"})
   public String index() {
     return "Hello :)";
   }
@@ -61,7 +62,7 @@ public class PharmaidController {
    * @return a ResponseEntity with a success message if the operation is successful, or an error
    *     message if the registration is unsuccessful
    */
-  @PostMapping({ "/register"})
+  @PostMapping({"/register"})
   public ResponseEntity<?> register(@RequestBody @Valid RegisterUserRequest request) {
     try {
       final User user = userService.registerUser(request);
@@ -122,8 +123,8 @@ public class PharmaidController {
       String json = mapper.writeValueAsString(user.get());
       return new ResponseEntity<>(json, HttpStatus.OK);
     } catch (Exception e) {
-      return new ResponseEntity<>(
-          "Unexpected error encountered during login", HttpStatus.INTERNAL_SERVER_ERROR);
+      return new ResponseEntity<>("Unexpected error encountered during login",
+          HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -131,7 +132,7 @@ public class PharmaidController {
    * Get all available medications endpoint.
    *
    * @return a ResponseEntity with a list of medications if the operation is successful, or an error
-   *      message if an error occurred
+   *     message if an error occurred
    */
   @GetMapping(path = "/medications")
   public ResponseEntity<?> getAllMedications() {
@@ -148,10 +149,10 @@ public class PharmaidController {
   /**
    * Add prescription endpoint.
    *
-   * @param userId user to add a prescription for
+   * @param userId  user to add a prescription for
    * @param request request containing prescription-related data
    * @return a ResponseEntity with the newly creation prescription if the operation is successful,
-   *      or an error message if an error occurred
+   *     or an error message if an error occurred
    */
   @PostMapping(path = "/users/{userId}/prescriptions")
   public ResponseEntity<?> addPrescription(
@@ -164,7 +165,8 @@ public class PharmaidController {
         return new ResponseEntity<>("Provided User doesn't exist", HttpStatus.NOT_FOUND);
       }
 
-      final Optional<Medication> medOptional =
+      final Optional<Medication>
+          medOptional =
           medicationService.getMedication(request.getMedicationId());
 
       if (medOptional.isEmpty()) {
@@ -180,11 +182,10 @@ public class PharmaidController {
       prescription.setEndDate(request.getEndDate());
       prescription.setIsActive(request.getIsActive());
 
-      return new ResponseEntity<>(
-          prescriptionService.createPrescription(prescription), HttpStatus.CREATED);
+      return new ResponseEntity<>(prescriptionService.createPrescription(prescription),
+          HttpStatus.CREATED);
     } catch (Exception e) {
-      return new ResponseEntity<>(
-          "Unexpected error encountered while creating a prescription",
+      return new ResponseEntity<>("Unexpected error encountered while creating a prescription",
           HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -246,8 +247,8 @@ public class PharmaidController {
    * Endpoint to get user's prescriptions.
    *
    * @param userId user whose prescriptions we're trying to retrieve
-   * @return a ResponseEntity with user's prescriptions if the operation is successful,
-   *      or an error message if an error occurred
+   * @return a ResponseEntity with user's prescriptions if the operation is successful, or an error
+   *     message if an error occurred
    */
   @GetMapping(path = "/users/{userId}/prescriptions")
   public ResponseEntity<?> getPrescriptionsForUser(@PathVariable(USER_ID) String userId) {
@@ -258,11 +259,10 @@ public class PharmaidController {
         return new ResponseEntity<>("Provided User doesn't exist", HttpStatus.NOT_FOUND);
       }
 
-      return new ResponseEntity<>(
-          prescriptionService.getPrescriptionsForUser(userId), HttpStatus.OK);
+      return new ResponseEntity<>(prescriptionService.getPrescriptionsForUser(userId),
+          HttpStatus.OK);
     } catch (Exception e) {
-      return new ResponseEntity<>(
-          "Unexpected error encountered while getting user prescriptions",
+      return new ResponseEntity<>("Unexpected error encountered while getting user prescriptions",
           HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
