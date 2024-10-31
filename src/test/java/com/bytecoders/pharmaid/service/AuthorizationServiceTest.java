@@ -1,13 +1,15 @@
 package com.bytecoders.pharmaid.service;
 
-import com.bytecoders.pharmaid.exception.UserNotFoundException;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
+
 import com.bytecoders.pharmaid.repository.SharingPermissionRepository;
 import com.bytecoders.pharmaid.repository.UserRepository;
 import com.bytecoders.pharmaid.repository.model.PermissionType;
 import com.bytecoders.pharmaid.repository.model.SharingPermissionStatus;
 import com.bytecoders.pharmaid.repository.model.User;
 import com.bytecoders.pharmaid.repository.model.UserType;
-import com.bytecoders.pharmaid.service.AuthorizationService;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,9 +17,11 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
+/**
+ * Unit tests for the AuthorizationService class.
+ * Verifies access and modification permissions for user records.
+ */
 class AuthorizationServiceTest {
 
   @Mock private UserRepository userRepository;
@@ -36,6 +40,9 @@ class AuthorizationServiceTest {
     targetUser.setId("targetUserId");
   }
 
+  /**
+   * Tests that a first responder has access to user records.
+   */
   @Test
   void canAccessUserRecords_firstResponder_shouldReturnTrue() {
     currentUser.setUserType(UserType.FIRST_RESPONDER);
@@ -46,6 +53,9 @@ class AuthorizationServiceTest {
     assertTrue(canAccess);
   }
 
+  /**
+   * Tests that a user can access their own records.
+   */
   @Test
   void canAccessUserRecords_sameUser_shouldReturnTrue() {
     when(userRepository.findById("currentUserId")).thenReturn(Optional.of(currentUser));
@@ -55,12 +65,18 @@ class AuthorizationServiceTest {
     assertTrue(canAccess);
   }
 
+  /**
+   * Tests that a user cannot access records without the correct permission.
+   */
   @Test
   void canAccessUserRecords_noPermission_shouldReturnFalse() {
     when(userRepository.findById("currentUserId")).thenReturn(Optional.of(currentUser));
     when(userRepository.findById("targetUserId")).thenReturn(Optional.of(targetUser));
     when(sharingPermissionRepository.existsByOwnerAndSharedWithUserAndPermissionTypeInAndStatus(
-        targetUser, currentUser, List.of(PermissionType.VIEW, PermissionType.EDIT), SharingPermissionStatus.ACCEPTED))
+        targetUser,
+        currentUser,
+        List.of(PermissionType.VIEW, PermissionType.EDIT),
+        SharingPermissionStatus.ACCEPTED))
         .thenReturn(false);
 
     boolean canAccess = authorizationService.canAccessUserRecords("currentUserId", "targetUserId");
@@ -68,6 +84,9 @@ class AuthorizationServiceTest {
     assertFalse(canAccess);
   }
 
+  /**
+   * Tests that a user can modify records if they have the required permissions.
+   */
   @Test
   void canModifyUserRecords_withPermission_shouldReturnTrue() {
     when(userRepository.findById("currentUserId")).thenReturn(Optional.of(currentUser));
@@ -81,6 +100,9 @@ class AuthorizationServiceTest {
     assertTrue(canModify);
   }
 
+  /**
+   * Tests that a user cannot modify records without the required permissions.
+   */
   @Test
   void canModifyUserRecords_noPermission_shouldReturnFalse() {
     when(userRepository.findById("currentUserId")).thenReturn(Optional.of(currentUser));

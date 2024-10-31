@@ -1,6 +1,7 @@
 package com.bytecoders.pharmaid.service;
 
-import com.bytecoders.pharmaid.exception.AuthenticationException;
+import static com.bytecoders.pharmaid.util.SecurityUtils.getCurrentUserId;
+
 import com.bytecoders.pharmaid.exception.NotAuthorizedException;
 import com.bytecoders.pharmaid.exception.ResourceNotFoundException;
 import com.bytecoders.pharmaid.exception.UserNotFoundException;
@@ -11,12 +12,9 @@ import com.bytecoders.pharmaid.repository.model.SharingPermissionStatus;
 import com.bytecoders.pharmaid.repository.model.SharingRequest;
 import com.bytecoders.pharmaid.repository.model.User;
 import java.util.Date;
-import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 /**
@@ -179,26 +177,5 @@ public class SharingPermissionService {
     }
 
     sharingPermissionRepository.delete(permission);
-  }
-
-  /**
-   * Retrieves the ID of the currently authenticated user.
-   *
-   * @return The ID of the current user.
-   * @throws AuthenticationException if no user is authenticated.
-   */
-  public static String getCurrentUserId() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    if (authentication != null && authentication.isAuthenticated()) {
-      Object principal = authentication.getPrincipal();
-      if (principal instanceof User) {
-        return ((User) principal).getId();
-      } else if (principal instanceof org.springframework.security.core.userdetails.User) {
-        return ((org.springframework.security.core.userdetails.User) principal).getUsername();
-      } else if (principal instanceof String) {
-        return (String) principal;
-      }
-    }
-    throw new AuthenticationException("User not authenticated");
   }
 }
