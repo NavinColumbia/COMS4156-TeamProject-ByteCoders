@@ -12,6 +12,7 @@ import com.bytecoders.pharmaid.repository.model.SharingPermissionStatus;
 import com.bytecoders.pharmaid.repository.model.SharingRequest;
 import com.bytecoders.pharmaid.repository.model.User;
 import java.util.Date;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
@@ -50,18 +51,21 @@ public class SharingPermissionService {
       throw new IllegalArgumentException("Cannot create sharing permission with yourself");
     }
 
-    User requester =
-        userRepository
-            .findById(requesterId)
-            .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + requesterId));
+    User requester = userRepository
+        .findById(requesterId)
+        .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + requesterId));
 
-    // Check if permission already exists
-    boolean permissionExists =
-        sharingPermissionRepository.existsByOwnerAndSharedWithUserAndPermissionTypeAndStatus(
-            owner, requester, request.getPermissionType(), SharingPermissionStatus.PENDING);
+    // Check if permission already exists and return it if found
+    Optional<SharingPermission> existingPermission = sharingPermissionRepository
+        .findByOwnerAndSharedWithUserAndPermissionTypeAndStatus(
+            owner,
+            requester,
+            request.getPermissionType(),
+            SharingPermissionStatus.PENDING
+        );
 
-    if (permissionExists) {
-      throw new IllegalArgumentException("A pending sharing request already exists");
+    if (existingPermission.isPresent()) {
+      return existingPermission.get();
     }
 
     SharingPermission permission = new SharingPermission();

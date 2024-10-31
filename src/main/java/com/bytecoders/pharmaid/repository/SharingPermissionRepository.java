@@ -5,12 +5,31 @@ import com.bytecoders.pharmaid.repository.model.SharingPermission;
 import com.bytecoders.pharmaid.repository.model.SharingPermissionStatus;
 import com.bytecoders.pharmaid.repository.model.User;
 import java.util.Collection;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 /** Repository interface for SharingPermission entity operations. */
 @Repository
 public interface SharingPermissionRepository extends JpaRepository<SharingPermission, String> {
+
+
+  /**
+   * Finds a specific permission by its parameters.
+   *
+   * @param owner the owner user
+   * @param sharedWithUser the user with whom the data is shared
+   * @param permissionType specific permission type to check
+   * @param status the status of the permission
+   * @return Optional containing the permission if found
+   */
+  Optional<SharingPermission> findByOwnerAndSharedWithUserAndPermissionTypeAndStatus(
+      User owner,
+      User sharedWithUser,
+      PermissionType permissionType,
+      SharingPermissionStatus status
+  );
+
 
   /**
    * Checks if a permission exists with given parameters.
