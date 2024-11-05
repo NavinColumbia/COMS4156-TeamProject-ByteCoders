@@ -36,74 +36,106 @@
             <artifactId>spring-cloud-gcp-starter-sql-postgresql</artifactId>
             <version>5.8.0</version>
         </dependency>
+
         <dependency>
             <groupId>com.google.cloud</groupId>
             <artifactId>spring-cloud-gcp-starter-secretmanager</artifactId>
             <version>5.8.0</version>
         </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jdbc</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>1.18.34</version>
             <scope>provided</scope>
         </dependency>
+
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>42.7.4</version>
         </dependency>
+
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.mindrot</groupId>
             <artifactId>jbcrypt</artifactId>
             <version>0.4</version>
         </dependency>
+
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>2.5.0</version>
         </dependency>
+
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
             <scope>test</scope>
             <version>5.10.1</version>
         </dependency>
+
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
             <version>5.11.0</version>
         </dependency>
+
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-junit-jupiter</artifactId>
             <scope>test</scope>
             <version>5.12.0</version>
         </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-ui</artifactId>
+            <version>1.8.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.openapitools</groupId>
+            <artifactId>jackson-databind-nullable</artifactId>
+            <version>0.2.6</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations</artifactId>
+            <version>2.2.25</version>
         </dependency>
     </dependencies>
 
@@ -113,6 +145,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+
             <plugin>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <configuration>
@@ -134,6 +167,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <version>3.2.0</version>
             </plugin>
+
             <plugin>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <executions>
@@ -153,6 +187,7 @@
                 <groupId>org.jacoco</groupId>
                 <version>0.8.11</version>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -172,6 +207,7 @@
                     </compilerArgs>
                 </configuration>
             </plugin>
+
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>
@@ -195,6 +231,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <version>3.6.0</version>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
@@ -208,6 +245,10 @@
                         <ruleset>/rulesets/java/maven-pmd-plugin-default.xml</ruleset>
                     </rulesets>
                     <linkXRef>false</linkXRef>
+                    <excludeRoots>
+                        <!-- exclude openapi generated files from PMD checks. Else, throws errors-->
+                        <excludeRoot>target/generated-sources/openapi</excludeRoot>
+                    </excludeRoots>
                 </configuration>
                 <executions>
                     <execution>
@@ -218,6 +259,53 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <plugin>
+                <groupId>org.openapitools</groupId>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+                <version>7.9.0</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>${project.basedir}/src/main/resources/openapi.yaml
+                            </inputSpec>
+                            <generatorName>spring</generatorName>
+                            <configOptions>
+                                <!-- only generate models -->
+                                <generateApis>false</generateApis>
+                                <generateModels>true</generateModels>
+
+                                <!-- replaces openapi java.time.LocalDate with java.util.Date -->
+                                <dateLibrary>custom</dateLibrary>
+
+                                <!-- don't generate Controller files -->
+                                <interfaceOnly>true</interfaceOnly>
+
+                                <!-- need Spring Boot 3, default is Spring Boot 2 -->
+                                <useSpringBoot3>true</useSpringBoot3>
+
+                                <!-- incorporates Lombok to generated files -->
+                                <additionalModelTypeAnnotations>@lombok.Data
+                                </additionalModelTypeAnnotations>
+                            </configOptions>
+                            <modelPackage>com.bytecoders.pharmaid.openapi.model</modelPackage>
+                            <output>${project.build.directory}/generated-sources/openapi</output>
+
+                            <!-- date conversions from <dateLibrary>custom</dateLibrary> -->
+                            <typeMappings>
+                                <typeMapping>Date=Date</typeMapping>
+                            </typeMappings>
+                            <importMappings>
+                                <importMapping>Date=java.util.Date</importMapping>
+                            </importMappings>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
         </plugins>
     </build>
 </project>
