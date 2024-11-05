@@ -1,0 +1,347 @@
+openapi: 3.0.3
+info:
+  title: PharmaId API
+  description: PharmaId API for managing users, medications, and prescriptions.
+  version: 1.0.0
+servers:
+  - url: https://bytecoders-coms4156.uk.r.appspot.com/
+    description: Production server
+  - url: http://localhost:8080/
+    description: Development server
+
+paths:
+  /hello:
+    get:
+      operationId: getHelloMessage
+      summary: Basic hello endpoint
+      responses:
+        "200":
+          description: Successful response
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Hello :)"
+        "500":
+          description: Unexpected error encountered
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Unexpected error encountered"
+
+  /register:
+    post:
+      operationId: registerUser
+      summary: Register a new user
+      description: Creates a new user account with the provided email and password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterUserRequest"
+      responses:
+        "201":
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: User already exists for a provided email
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "User already exists for this email"
+        "500":
+          description: Unexpected error encountered while registering a user
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Something went wrong"
+
+  /login:
+    post:
+      operationId: loginUser
+      summary: Login a user
+      description: Authenticate a user with the provided email and password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginUserRequest"
+      responses:
+        "200":
+          description: Successful login attempt
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized login attempt
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Forbidden"
+        "500":
+          description: Unexpected server error encountered during login
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Unexpected error encountered during login"
+
+  /medications:
+    get:
+      operationId: getMedications
+      summary: Get all available medications
+      description: Returns a list of medications currently available to create prescriptions for.
+      responses:
+        "200":
+          description: Successful request to return a list of medications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Medication"
+        "500":
+          description: Unexpected error encountered during getting a list of medications
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Unexpected error encountered during getting a list of medications"
+
+  /users/{userId}/prescriptions:
+    post:
+      operationId: createUserPrescription
+      summary: Create a prescription for a user
+      description: Returns a JSON response of the prescription created by a user.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePrescriptionRequest"
+      responses:
+        "201":
+          description: User prescription created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Prescription"
+        "404":
+          $ref: "#/components/responses/UserDoesNotExist"
+        "500":
+          description: Unexpected error encountered while creating a prescription
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Unexpected error encountered while creating a prescription"
+    get:
+      operationId: getUserPrescriptions
+      summary: Get prescriptions for a user
+      description: Retrieves a JSON array of all prescriptions associated with the specified user.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UserId"
+      responses:
+        "200":
+          description: List of prescriptions for a user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Prescription"
+        "404":
+          $ref: "#/components/responses/UserDoesNotExist"
+        "500":
+          description: Unexpected error encountered while getting user prescriptions
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Unexpected error encountered while getting user prescriptions"
+
+components:
+  schemas:
+    # User Attributes
+    UserId:
+      type: string
+      description: Unique identifier for the user.
+      example: "9101d183-26e6-45b7-a8c4-25f24fdb36fa"
+      readOnly: true # immutable
+
+    UserEmail:
+      type: string
+      format: email
+      description: The email address of the user.
+      example: "user@example.com"
+
+    UserPassword:
+      type: string
+      description: A secure user password that will be hashed before storage.
+      example: "securePassword123*"
+      writeOnly: true # should not view password in responses
+
+    # Medication Attributes
+    MedicationId:
+      type: string
+      description: Unique identifier for the medication.
+      example: "cb0a748d-78f5-4c39-8a4f-dc3b14254023"
+      readOnly: true
+
+    MedicationName:
+      type: string
+      description: Medication name.
+      example: "Acetaminophen"
+
+    # Prescription Attributes
+    PrescriptionId:
+      type: string
+      description: Unique identifier for the prescription.
+      example: "27b8d3b6-f101-478e-a9b5-d8d61d18e76e"
+      readOnly: true
+
+    PrescriptionDosage:
+      type: integer
+      description: Dosage amount. Units are overrated.
+      example: 500
+
+    PrescriptionNumOfDoses:
+      type: integer
+      description: Number of doses for a prescription.
+      example: 3
+
+    PrescriptionStartDate:
+      type: string
+      format: date
+      description: The date the user started taking the prescription.
+      example: "2024-01-01"
+
+    PrescriptionEndDate:
+      type: string
+      format: date
+      description: The date the user stopped taking the prescription.
+      example: "2024-02-01"
+
+    PrescriptionIsActive:
+      type: boolean
+      description: Whether the user is currently taking their prescription or not.
+      example: true
+
+    # Entity Models
+    User:
+      type: object
+      properties:
+        userId:
+          $ref: "#/components/schemas/UserId"
+        email:
+          $ref: "#/components/schemas/UserEmail"
+        hashedPassword:
+          $ref: "#/components/schemas/UserPassword"
+
+    Medication:
+      type: object
+      properties:
+        medicationId:
+          $ref: "#/components/schemas/MedicationId"
+        medicationName:
+          $ref: "#/components/schemas/MedicationName"
+
+    Prescription:
+      type: object
+      properties:
+        prescriptionId:
+          $ref: "#/components/schemas/PrescriptionId"
+        medication:
+          $ref: "#/components/schemas/Medication"
+        dosage:
+          $ref: "#/components/schemas/PrescriptionDosage"
+        numOfDoses:
+          $ref: "#/components/schemas/PrescriptionNumOfDoses"
+        startDate:
+          $ref: "#/components/schemas/PrescriptionStartDate"
+        endDate:
+          $ref: "#/components/schemas/PrescriptionEndDate"
+        isActive:
+          $ref: "#/components/schemas/PrescriptionIsActive"
+
+    # Request Objects
+    RegisterUserRequest:
+      type: object
+      properties:
+        email:
+          $ref: "#/components/schemas/UserEmail"
+        password:
+          $ref: "#/components/schemas/UserPassword"
+      required:
+        - email
+        - password
+
+    LoginUserRequest:
+      type: object
+      properties:
+        email:
+          $ref: "#/components/schemas/UserEmail"
+        password:
+          $ref: "#/components/schemas/UserPassword"
+      required:
+        - email
+        - password
+
+    CreatePrescriptionRequest:
+      properties:
+        medicationId:
+          $ref: "#/components/schemas/MedicationId"
+        dosage:
+          $ref: "#/components/schemas/PrescriptionDosage"
+        numOfDoses:
+          $ref: "#/components/schemas/PrescriptionNumOfDoses"
+        startDate:
+          $ref: "#/components/schemas/PrescriptionStartDate"
+        endDate:
+          $ref: "#/components/schemas/PrescriptionEndDate"
+        isActive:
+          $ref: "#/components/schemas/PrescriptionIsActive"
+      type: object
+      required:
+        - medicationId
+        - dosage
+        - numOfDoses
+        - startDate
+        - isActive
+
+  responses:
+    UserDoesNotExist:
+      description: Provided userId does not exist
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: "Provided userId does not exist"
+
+    MedicationDoesNotExist:
+      description: Provided medicationId does not exist
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: "Provided medicationId does not exist"

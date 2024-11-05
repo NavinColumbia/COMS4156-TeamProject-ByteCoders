@@ -1,11 +1,11 @@
 package com.bytecoders.pharmaid;
 
+import com.bytecoders.pharmaid.openapi.model.CreatePrescriptionRequest;
+import com.bytecoders.pharmaid.openapi.model.LoginUserRequest;
+import com.bytecoders.pharmaid.openapi.model.RegisterUserRequest;
 import com.bytecoders.pharmaid.repository.model.Medication;
 import com.bytecoders.pharmaid.repository.model.Prescription;
 import com.bytecoders.pharmaid.repository.model.User;
-import com.bytecoders.pharmaid.request.CreatePrescriptionRequest;
-import com.bytecoders.pharmaid.request.LoginUserRequest;
-import com.bytecoders.pharmaid.request.RegisterUserRequest;
 import com.bytecoders.pharmaid.service.MedicationService;
 import com.bytecoders.pharmaid.service.PrescriptionService;
 import com.bytecoders.pharmaid.service.UserService;
@@ -38,12 +38,15 @@ public class PharmaidController {
   @Autowired
   private PrescriptionService prescriptionService;
 
+  private static final String USER_NOT_FOUND_MESSAGE = "Provided userId does not exist";
+  private static final String MEDICATION_NOT_FOUND_MESSAGE = "Provided medicationId does not exist";
+
   /**
    * Basic hello endpoint for testing.
    *
    * @return A String
    */
-  @GetMapping({"/hello"})
+  @GetMapping({"/", "/hello"})
   public String index() {
     return "Hello :)";
   }
@@ -125,7 +128,7 @@ public class PharmaidController {
       final Optional<User> userOptional = userService.getUser(userId);
 
       if (userOptional.isEmpty()) {
-        return new ResponseEntity<>("Provided User doesn't exist", HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(USER_NOT_FOUND_MESSAGE, HttpStatus.NOT_FOUND);
       }
 
       final Optional<Medication>
@@ -133,7 +136,7 @@ public class PharmaidController {
           medicationService.getMedication(request.getMedicationId());
 
       if (medOptional.isEmpty()) {
-        return new ResponseEntity<>("Medication doesn't exist", HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(MEDICATION_NOT_FOUND_MESSAGE, HttpStatus.NOT_FOUND);
       }
 
       final Prescription prescription = new Prescription();
@@ -166,7 +169,7 @@ public class PharmaidController {
       final Optional<User> userOptional = userService.getUser(userId);
 
       if (userOptional.isEmpty()) {
-        return new ResponseEntity<>("Provided User doesn't exist", HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(USER_NOT_FOUND_MESSAGE, HttpStatus.NOT_FOUND);
       }
 
       return new ResponseEntity<>(prescriptionService.getPrescriptionsForUser(userId),

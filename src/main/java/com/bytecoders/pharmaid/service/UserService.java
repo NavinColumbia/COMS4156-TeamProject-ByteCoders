@@ -1,9 +1,9 @@
 package com.bytecoders.pharmaid.service;
 
+import com.bytecoders.pharmaid.openapi.model.LoginUserRequest;
+import com.bytecoders.pharmaid.openapi.model.RegisterUserRequest;
 import com.bytecoders.pharmaid.repository.UserRepository;
 import com.bytecoders.pharmaid.repository.model.User;
-import com.bytecoders.pharmaid.request.LoginUserRequest;
-import com.bytecoders.pharmaid.request.RegisterUserRequest;
 import com.bytecoders.pharmaid.util.PasswordUtils;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class UserService {
+
   @Autowired
   private UserRepository userRepository;
 
@@ -46,8 +47,10 @@ public class UserService {
       return Optional.empty();
     }
 
-    final boolean isCorrectPassword = passwordUtils.verifyPassword(
-        loginUserRequest.getPassword(), userWithEmail.get().getHashedPassword());
+    final boolean
+        isCorrectPassword =
+        passwordUtils.verifyPassword(loginUserRequest.getPassword(),
+            userWithEmail.get().getHashedPassword());
 
     return isCorrectPassword ? userWithEmail : Optional.empty();
   }
