@@ -46,7 +46,7 @@ public class PharmaidController {
    *
    * @return A String
    */
-  @GetMapping({"/", "/hello"})
+  @GetMapping({"/hello"})
   public String index() {
     return "Hello :)";
   }
