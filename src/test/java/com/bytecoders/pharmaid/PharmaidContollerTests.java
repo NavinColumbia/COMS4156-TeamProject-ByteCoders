@@ -4,12 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import com.bytecoders.pharmaid.openapi.model.CreatePrescriptionRequest;
+import com.bytecoders.pharmaid.openapi.model.LoginUserRequest;
+import com.bytecoders.pharmaid.openapi.model.RegisterUserRequest;
 import com.bytecoders.pharmaid.repository.model.Medication;
 import com.bytecoders.pharmaid.repository.model.Prescription;
 import com.bytecoders.pharmaid.repository.model.User;
-import com.bytecoders.pharmaid.request.CreatePrescriptionRequest;
-import com.bytecoders.pharmaid.request.LoginUserRequest;
-import com.bytecoders.pharmaid.request.RegisterUserRequest;
 import com.bytecoders.pharmaid.service.MedicationService;
 import com.bytecoders.pharmaid.service.PrescriptionService;
 import com.bytecoders.pharmaid.service.UserService;
@@ -161,7 +161,7 @@ public class PharmaidContollerTests {
 
     ResponseEntity<?> response = testController.addPrescription(userId, request);
     assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-    assertEquals("Provided User doesn't exist", response.getBody());
+    assertEquals("Provided userId does not exist", response.getBody());
   }
 
   /** Test for getting prescriptions for a user. */
@@ -194,7 +194,7 @@ public class PharmaidContollerTests {
 
     ResponseEntity<?> response = testController.getPrescriptionsForUser(userId);
     assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-    assertEquals("Provided User doesn't exist", response.getBody());
+    assertEquals("Provided userId does not exist", response.getBody());
   }
 
   @MockBean private UserService userService;
