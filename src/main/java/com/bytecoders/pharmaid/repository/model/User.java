@@ -4,8 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Data;
@@ -31,9 +29,5 @@ public class User {
   @JsonIgnore
   private String hashedPassword;
 
-  @Column(name = "user_type", nullable = false)
-  @Enumerated(EnumType.STRING)
-  @JsonProperty
-  private UserType userType = UserType.PATIENT;
 
 }
