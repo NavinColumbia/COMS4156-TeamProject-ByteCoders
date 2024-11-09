@@ -28,6 +28,4 @@ public class User {
   @Column(name = "hashed_password", nullable = false)
   @JsonIgnore
   private String hashedPassword;
-
-
 }
