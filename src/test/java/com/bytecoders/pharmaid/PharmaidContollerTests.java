@@ -17,29 +17,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Optional;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.ContextConfiguration;
 
 /** This class represents a set of unit tests for {@code PharmaidController} class. */
-@SpringBootTest
-@ContextConfiguration
+@WebMvcTest(PharmaidController.class)
 public class PharmaidContollerTests {
-
-
-  /**
-   * Setup for tests.
-   */
-  @BeforeEach
-  void setup() {
-    objectMapper = new ObjectMapper();
-  }
 
   @Test
   public void registerSuccessTest() {
@@ -84,9 +72,7 @@ public class PharmaidContollerTests {
     assertEquals(actualUser.getBody(), "Something went wrong");
   }
 
-  /**
-   * Test for successful user login.
-   */
+  /** Test for successful user login. */
   @Test
   void testLoginSuccess() throws Exception {
     LoginUserRequest request = new LoginUserRequest();
@@ -104,9 +90,7 @@ public class PharmaidContollerTests {
     assertEquals(objectMapper.writeValueAsString(mockUser), response.getBody());
   }
 
-  /**
-   * Test for failed user login.
-   */
+  /** Test for failed user login. */
   @Test
   void testLoginFailed() {
     LoginUserRequest request = new LoginUserRequest();
@@ -120,9 +104,7 @@ public class PharmaidContollerTests {
     assertEquals("Forbidden", response.getBody());
   }
 
-  /**
-   * Test for getting all medications.
-   */
+  /** Test for getting all medications. */
   @Test
   void testGetAllMedications() {
     Medication med1 = new Medication();
@@ -137,9 +119,7 @@ public class PharmaidContollerTests {
     assertEquals(Arrays.asList(med1, med2), response.getBody());
   }
 
-  /**
-   * Test for adding a prescription successfully.
-   */
+  /** Test for adding a prescription successfully. */
   @Test
   void testAddPrescriptionSuccess() {
 
@@ -163,17 +143,15 @@ public class PharmaidContollerTests {
 
     when(userService.getUser(userId)).thenReturn(Optional.of(mockUser));
     when(medicationService.getMedication("medId")).thenReturn(Optional.of(mockMed));
-    when(prescriptionService.createPrescription(any(Prescription.class))).thenReturn(
-        mockPrescription);
+    when(prescriptionService.createPrescription(any(Prescription.class)))
+        .thenReturn(mockPrescription);
 
     ResponseEntity<?> response = testController.addPrescription(userId, request);
     assertEquals(HttpStatus.CREATED, response.getStatusCode());
     assertEquals(mockPrescription, response.getBody());
   }
 
-  /**
-   * Test for adding a prescription with non-existent user.
-   */
+  /** Test for adding a prescription with non-existent user. */
   @Test
   void testAddPrescriptionUserNotFound() {
     String userId = "nonExistentUserId";
@@ -186,9 +164,7 @@ public class PharmaidContollerTests {
     assertEquals("Provided userId does not exist", response.getBody());
   }
 
-  /**
-   * Test for getting prescriptions for a user.
-   */
+  /** Test for getting prescriptions for a user. */
   @Test
   void testGetPrescriptionsForUser() {
     String userId = "userId";
@@ -201,17 +177,15 @@ public class PharmaidContollerTests {
     prescription2.setPrescriptionId("prescription2");
 
     when(userService.getUser(userId)).thenReturn(Optional.of(mockUser));
-    when(prescriptionService.getPrescriptionsForUser(userId)).thenReturn(Arrays.asList(prescription1,
-        prescription2));
+    when(prescriptionService.getPrescriptionsForUser(userId))
+        .thenReturn(Arrays.asList(prescription1, prescription2));
 
     ResponseEntity<?> response = testController.getPrescriptionsForUser(userId);
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertEquals(Arrays.asList(prescription1, prescription2), response.getBody());
   }
 
-  /**
-   * Test for getting prescriptions for a non-existent user.
-   */
+  /** Test for getting prescriptions for a non-existent user. */
   @Test
   void testGetPrescriptionsForNonExistentUser() {
     String userId = "nonExistentUserId";
@@ -223,20 +197,13 @@ public class PharmaidContollerTests {
     assertEquals("Provided userId does not exist", response.getBody());
   }
 
-  @Mock
-  private UserService userService;
+  @MockBean private UserService userService;
 
-  @InjectMocks
-  public static PharmaidApplication testApplication;
+  @Autowired public PharmaidController testController;
 
-  @InjectMocks
-  public static PharmaidController testController;
+  @MockBean private MedicationService medicationService;
 
-  @Mock
-  private MedicationService medicationService;
+  @MockBean private PrescriptionService prescriptionService;
 
-  @Mock
-  private PrescriptionService prescriptionService;
-
-  private ObjectMapper objectMapper;
+  @Autowired private ObjectMapper objectMapper;
 }
