@@ -74,18 +74,5 @@ public class SecurityConfig {
     return http.build();
   }
 
-  @Profile("test") //For test just allow everything
-  @Configuration
-  public static class TestSecurityConfig {
-    @Bean
-    public SecurityFilterChain testFilterChain(HttpSecurity http) throws Exception {
-      http.csrf(csrf -> csrf.disable())
-          .sessionManagement(
-              session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-          .authorizeHttpRequests(auth ->
-              auth.anyRequest().permitAll()); // Allow all requests in test profile
-      return http.build();
-    }
-  }
 
 }

@@ -149,7 +149,7 @@ public class SharedPermissionService {
   }
 
   /**
-   * Checks if current user can modify another user's records
+   * Checks if current user can modify another user's records.
    *
    * @param requesterId user requesting modification
    * @param ownerId user whose records are being modified

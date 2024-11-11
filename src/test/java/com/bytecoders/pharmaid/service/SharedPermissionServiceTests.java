@@ -1,6 +1,5 @@
 package com.bytecoders.pharmaid.service;
 
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -20,7 +19,6 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -280,7 +278,6 @@ public class SharedPermissionServiceTests {
 
     boolean result = sharedPermissionService.hasPermission(sameUserId, sameUserId, 0);
     assertTrue(result);
-
   }
 
   @Test
@@ -288,18 +285,17 @@ public class SharedPermissionServiceTests {
     assertThrows(
         IllegalArgumentException.class,
         () -> sharedPermissionService.hasPermission("requester456", "owner123", 3),
-        "Permission Type should be view or edit"
-    );
-
+        "Permission Type should be view or edit");
   }
+
   @Test
   void hasPermission_RequesterNotFound() {
     when(userRepository.findById("requester456")).thenReturn(Optional.empty());
 
-    ResponseStatusException exception = assertThrows(
-        ResponseStatusException.class,
-        () -> sharedPermissionService.hasPermission("requester456", "owner123", VIEW)
-    );
+    ResponseStatusException exception =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> sharedPermissionService.hasPermission("requester456", "owner123", VIEW));
 
     assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
     assertEquals("Requester User Not found", exception.getReason());
@@ -329,13 +325,14 @@ public class SharedPermissionServiceTests {
 
     when(userRepository.findById("responder789")).thenReturn(Optional.of(firstResponder));
     when(userRepository.findById("owner123")).thenReturn(Optional.of(owner));
-    when(sharedPermissionRepository.findByOwnerRequesterPermissionStatus(any(), any(), eq(EDIT), eq(ACCEPT)))
+    when(sharedPermissionRepository.findByOwnerRequesterPermissionStatus(
+            any(), any(), eq(EDIT), eq(ACCEPT)))
         .thenReturn(Optional.empty());
 
     boolean result = sharedPermissionService.hasPermission("responder789", "owner123", EDIT);
 
     assertFalse(result);
-    }
+  }
 
   @Test
   void hasPermission_OwnerNotFound() {
@@ -346,10 +343,10 @@ public class SharedPermissionServiceTests {
     when(userRepository.findById("requester456")).thenReturn(Optional.of(requester));
     when(userRepository.findById("owner123")).thenReturn(Optional.empty());
 
-    ResponseStatusException exception = assertThrows(
-        ResponseStatusException.class,
-        () -> sharedPermissionService.hasPermission("requester456", "owner123", VIEW)
-    );
+    ResponseStatusException exception =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> sharedPermissionService.hasPermission("requester456", "owner123", VIEW));
 
     assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
     assertEquals("Owner User Not found", exception.getReason());
@@ -373,7 +370,7 @@ public class SharedPermissionServiceTests {
     when(userRepository.findById("requester456")).thenReturn(Optional.of(requester));
     when(userRepository.findById("owner123")).thenReturn(Optional.of(owner));
     when(sharedPermissionRepository.findByOwnerRequesterPermissionStatus(
-        requester, owner, VIEW, ACCEPT))
+            requester, owner, VIEW, ACCEPT))
         .thenReturn(Optional.of(permission));
 
     boolean result = sharedPermissionService.hasPermission("requester456", "owner123", VIEW);
@@ -393,7 +390,7 @@ public class SharedPermissionServiceTests {
     when(userRepository.findById("requester456")).thenReturn(Optional.of(requester));
     when(userRepository.findById("owner123")).thenReturn(Optional.of(owner));
     when(sharedPermissionRepository.findByOwnerRequesterPermissionStatus(
-        requester, owner, VIEW, ACCEPT))
+            requester, owner, VIEW, ACCEPT))
         .thenReturn(Optional.empty());
 
     boolean result = sharedPermissionService.hasPermission("requester456", "owner123", VIEW);

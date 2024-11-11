@@ -6,7 +6,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.server.ResponseStatusException;
 
-/** For getting loggedin user */
+/** For getting loggedin user. */
 public class SecurityUtils {
 
   /**

@@ -10,6 +10,8 @@ import com.bytecoders.pharmaid.repository.model.User;
 import com.bytecoders.pharmaid.request.CreatePrescriptionRequest;
 import com.bytecoders.pharmaid.request.LoginUserRequest;
 import com.bytecoders.pharmaid.request.RegisterUserRequest;
+import com.bytecoders.pharmaid.security.JwtAuthenticationFilter;
+import com.bytecoders.pharmaid.security.JwtTokenProvider;
 import com.bytecoders.pharmaid.service.MedicationService;
 import com.bytecoders.pharmaid.service.PrescriptionService;
 import com.bytecoders.pharmaid.service.UserService;
@@ -24,9 +26,11 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.ActiveProfiles;
 
 /** This class represents a set of unit tests for {@code PharmaidController} class. */
 @WebMvcTest(PharmaidController.class)
+@ActiveProfiles("test")
 public class PharmaidContollerTests {
 
   @Test
@@ -206,4 +210,10 @@ public class PharmaidContollerTests {
   @MockBean private PrescriptionService prescriptionService;
 
   @Autowired private ObjectMapper objectMapper;
+
+  @MockBean
+  private JwtTokenProvider tokenProvider;  // Mock the JWT provider
+
+  @MockBean
+  private JwtAuthenticationFilter jwtAuthenticationFilter;
 }
