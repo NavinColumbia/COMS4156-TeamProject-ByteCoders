@@ -212,7 +212,7 @@ public class PharmaidContollerTests {
   @Autowired private ObjectMapper objectMapper;
 
   @MockBean
-  private JwtTokenProvider tokenProvider;  // Mock the JWT provider
+  private JwtTokenProvider tokenProvider;
 
   @MockBean
   private JwtAuthenticationFilter jwtAuthenticationFilter;
