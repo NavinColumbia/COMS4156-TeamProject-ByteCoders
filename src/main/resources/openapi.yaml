@@ -80,14 +80,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/User"
+                $ref: "#/components/schemas/LoginUserResponse"
         "401":
           description: Unauthorized login attempt
           content:
             text/plain:
               schema:
                 type: string
-                example: "Forbidden"
+                example: "Invalid email or password"
         "500":
           description: Unexpected server error encountered during login
           content:
@@ -201,6 +201,11 @@ components:
       example: "securePassword123*"
       writeOnly: true # should not view password in responses
 
+    UserJwtToken:
+      type: string
+      description: JWT token for user authentication
+      example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
     # Medication Attributes
     MedicationId:
       type: string
@@ -306,6 +311,18 @@ components:
       required:
         - email
         - password
+
+    LoginUserResponse:
+      type: object
+      properties:
+        userId:
+          $ref: "#/components/schemas/UserId"
+        email:
+          $ref: "#/components/schemas/UserEmail"
+        token:
+          type: string
+          description: JWT token for user authentication
+          example: "#/components/schemas/UserEmail"
 
     CreatePrescriptionRequest:
       properties:

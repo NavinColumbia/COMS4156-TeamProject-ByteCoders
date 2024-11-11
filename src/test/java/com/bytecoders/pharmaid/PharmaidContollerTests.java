@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 
 import com.bytecoders.pharmaid.openapi.model.CreatePrescriptionRequest;
 import com.bytecoders.pharmaid.openapi.model.LoginUserRequest;
+import com.bytecoders.pharmaid.openapi.model.LoginUserResponse;
 import com.bytecoders.pharmaid.openapi.model.RegisterUserRequest;
 import com.bytecoders.pharmaid.repository.model.Medication;
 import com.bytecoders.pharmaid.repository.model.Prescription;
@@ -13,6 +14,7 @@ import com.bytecoders.pharmaid.repository.model.User;
 import com.bytecoders.pharmaid.service.MedicationService;
 import com.bytecoders.pharmaid.service.PrescriptionService;
 import com.bytecoders.pharmaid.service.UserService;
+import com.bytecoders.pharmaid.util.JwtUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Arrays;
 import java.util.Date;
@@ -79,15 +81,16 @@ public class PharmaidContollerTests {
     request.setEmail("test@example.com");
     request.setPassword("password");
 
-    User mockUser = new User();
-    mockUser.setId("userId");
-    mockUser.setEmail("test@example.com");
+    LoginUserResponse mockLoginResponse = new LoginUserResponse();
+    mockLoginResponse.setUserId("userId");
+    mockLoginResponse.setEmail("test@example.com");
+    mockLoginResponse.setToken("mock.jwt.token");
 
-    when(userService.loginUser(request)).thenReturn(Optional.of(mockUser));
+    when(userService.loginUser(request)).thenReturn(Optional.of(mockLoginResponse));
+    ResponseEntity<?> response = testController.login(request);
 
-    ResponseEntity<String> response = testController.login(request);
     assertEquals(HttpStatus.OK, response.getStatusCode());
-    assertEquals(objectMapper.writeValueAsString(mockUser), response.getBody());
+    assertEquals(mockLoginResponse, response.getBody());
   }
 
   /** Test for failed user login. */
@@ -99,9 +102,9 @@ public class PharmaidContollerTests {
 
     when(userService.loginUser(request)).thenReturn(Optional.empty());
 
-    ResponseEntity<String> response = testController.login(request);
+    ResponseEntity<?> response = testController.login(request);
     assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-    assertEquals("Forbidden", response.getBody());
+    assertEquals("Invalid email or password", response.getBody());
   }
 
   /** Test for getting all medications. */
@@ -143,8 +146,8 @@ public class PharmaidContollerTests {
 
     when(userService.getUser(userId)).thenReturn(Optional.of(mockUser));
     when(medicationService.getMedication("medId")).thenReturn(Optional.of(mockMed));
-    when(prescriptionService.createPrescription(any(Prescription.class)))
-        .thenReturn(mockPrescription);
+    when(prescriptionService.createPrescription(any(Prescription.class))).thenReturn(
+        mockPrescription);
 
     ResponseEntity<?> response = testController.addPrescription(userId, request);
     assertEquals(HttpStatus.CREATED, response.getStatusCode());
@@ -177,8 +180,8 @@ public class PharmaidContollerTests {
     prescription2.setPrescriptionId("prescription2");
 
     when(userService.getUser(userId)).thenReturn(Optional.of(mockUser));
-    when(prescriptionService.getPrescriptionsForUser(userId))
-        .thenReturn(Arrays.asList(prescription1, prescription2));
+    when(prescriptionService.getPrescriptionsForUser(userId)).thenReturn(Arrays.asList(prescription1,
+        prescription2));
 
     ResponseEntity<?> response = testController.getPrescriptionsForUser(userId);
     assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -197,13 +200,21 @@ public class PharmaidContollerTests {
     assertEquals("Provided userId does not exist", response.getBody());
   }
 
-  @MockBean private UserService userService;
+  @MockBean
+  private UserService userService;
 
-  @Autowired public PharmaidController testController;
+  @Autowired
+  public PharmaidController testController;
 
-  @MockBean private MedicationService medicationService;
+  @MockBean
+  private MedicationService medicationService;
 
-  @MockBean private PrescriptionService prescriptionService;
+  @MockBean
+  private PrescriptionService prescriptionService;
 
-  @Autowired private ObjectMapper objectMapper;
+  @MockBean
+  private JwtUtils jwtUtil;
+
+  @Autowired
+  private ObjectMapper objectMapper;
 }

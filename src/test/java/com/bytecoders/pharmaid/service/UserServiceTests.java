@@ -6,9 +6,11 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
 import com.bytecoders.pharmaid.openapi.model.LoginUserRequest;
+import com.bytecoders.pharmaid.openapi.model.LoginUserResponse;
 import com.bytecoders.pharmaid.openapi.model.RegisterUserRequest;
 import com.bytecoders.pharmaid.repository.UserRepository;
 import com.bytecoders.pharmaid.repository.model.User;
+import com.bytecoders.pharmaid.util.JwtUtils;
 import com.bytecoders.pharmaid.util.PasswordUtils;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -23,6 +25,9 @@ import org.mockito.stubbing.Answer;
  */
 @ExtendWith(MockitoExtension.class)
 public class UserServiceTests {
+
+  @Mock
+  private JwtUtils jwtUtil;
 
   @Mock
   private UserRepository userRepository;
@@ -66,11 +71,17 @@ public class UserServiceTests {
     mockUser.setEmail("email@test.com");
     mockUser.setHashedPassword("hashedPassword");
 
+    LoginUserResponse mockLoginResponse = new LoginUserResponse();
+    mockLoginResponse.setUserId(mockUser.getId());
+    mockLoginResponse.setEmail(mockUser.getEmail());
+    mockLoginResponse.setToken("mockJwtToken");
+
     when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(mockUser));
     when(passwordUtils.verifyPassword("password", "hashedPassword")).thenReturn(true);
+    when(jwtUtil.generateToken(mockUser.getId())).thenReturn("mockJwtToken");
 
-    final Optional<User> userOptional = userService.loginUser(request);
-    assertEquals(userOptional, Optional.of(mockUser));
+    final Optional<LoginUserResponse> loginResponseOptional = userService.loginUser(request);
+    assertEquals(loginResponseOptional, Optional.of(mockLoginResponse));
   }
 
   @Test
@@ -81,8 +92,8 @@ public class UserServiceTests {
 
     when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.empty());
 
-    final Optional<User> userOptional = userService.loginUser(request);
-    assertEquals(userOptional, Optional.empty());
+    final Optional<LoginUserResponse> loginResponseOptional = userService.loginUser(request);
+    assertEquals(loginResponseOptional, Optional.empty());
   }
 
   @Test
@@ -99,7 +110,7 @@ public class UserServiceTests {
     when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(mockUser));
     when(passwordUtils.verifyPassword("password", "hashedPassword")).thenReturn(false);
 
-    final Optional<User> userOptional = userService.loginUser(request);
-    assertEquals(userOptional, Optional.empty());
+    final Optional<LoginUserResponse> loginResponseOptional = userService.loginUser(request);
+    assertEquals(loginResponseOptional, Optional.empty());
   }
 }
