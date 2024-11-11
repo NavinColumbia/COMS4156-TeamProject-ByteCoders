@@ -2,9 +2,12 @@ package com.bytecoders.pharmaid.service;
 
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -17,14 +20,22 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 /** Unit tests for Shared Permission Service. */
 @ExtendWith(MockitoExtension.class)
 public class SharedPermissionServiceTests {
+
+  private static final int FIRST_RESPONDER = 1;
+  private static final int REGULAR_USER = 0;
+  private static final int VIEW = 0;
+  private static final int EDIT = 1;
+  private static final int ACCEPT = 1;
 
   @Mock private SharedPermissionRepository sharedPermissionRepository;
 
@@ -38,6 +49,7 @@ public class SharedPermissionServiceTests {
 
   @BeforeEach
   void setUp() {
+
     owner = new User();
     owner.setId("owner123");
 
@@ -260,5 +272,132 @@ public class SharedPermissionServiceTests {
     assertThrows(
         IllegalArgumentException.class,
         () -> sharedPermissionService.revokeSharingPermission("owner123", "permission789"));
+  }
+
+  @Test
+  void hasPermission_SameUser_Success() {
+    String sameUserId = "user123";
+
+    boolean result = sharedPermissionService.hasPermission(sameUserId, sameUserId, 0);
+    assertTrue(result);
+
+  }
+
+  @Test
+  void hasPermission_InvalidPermissionType() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> sharedPermissionService.hasPermission("requester456", "owner123", 3),
+        "Permission Type should be view or edit"
+    );
+
+  }
+  @Test
+  void hasPermission_RequesterNotFound() {
+    when(userRepository.findById("requester456")).thenReturn(Optional.empty());
+
+    ResponseStatusException exception = assertThrows(
+        ResponseStatusException.class,
+        () -> sharedPermissionService.hasPermission("requester456", "owner123", VIEW)
+    );
+
+    assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+    assertEquals("Requester User Not found", exception.getReason());
+  }
+
+  @Test
+  void hasPermission_FirstResponderViewAccess_Success() {
+    User firstResponder = new User();
+    firstResponder.setId("responder789");
+    firstResponder.setUserType(FIRST_RESPONDER);
+
+    when(userRepository.findById("responder789")).thenReturn(Optional.of(firstResponder));
+
+    boolean result = sharedPermissionService.hasPermission("responder789", "owner123", VIEW);
+
+    assertTrue(result);
+  }
+
+  @Test
+  void hasPermission_FirstResponderEditAccess_RequiresPermission() {
+    User firstResponder = new User();
+    firstResponder.setId("responder789");
+    firstResponder.setUserType(FIRST_RESPONDER);
+
+    User owner = new User();
+    owner.setId("owner123");
+
+    when(userRepository.findById("responder789")).thenReturn(Optional.of(firstResponder));
+    when(userRepository.findById("owner123")).thenReturn(Optional.of(owner));
+    when(sharedPermissionRepository.findByOwnerRequesterPermissionStatus(any(), any(), eq(EDIT), eq(ACCEPT)))
+        .thenReturn(Optional.empty());
+
+    boolean result = sharedPermissionService.hasPermission("responder789", "owner123", EDIT);
+
+    assertFalse(result);
+    }
+
+  @Test
+  void hasPermission_OwnerNotFound() {
+    User requester = new User();
+    requester.setId("requester456");
+    requester.setUserType(REGULAR_USER);
+
+    when(userRepository.findById("requester456")).thenReturn(Optional.of(requester));
+    when(userRepository.findById("owner123")).thenReturn(Optional.empty());
+
+    ResponseStatusException exception = assertThrows(
+        ResponseStatusException.class,
+        () -> sharedPermissionService.hasPermission("requester456", "owner123", VIEW)
+    );
+
+    assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+    assertEquals("Owner User Not found", exception.getReason());
+  }
+
+  @Test
+  void hasPermission_WithValidPermission_Success() {
+    User requester = new User();
+    requester.setId("requester456");
+    requester.setUserType(REGULAR_USER);
+
+    User owner = new User();
+    owner.setId("owner123");
+
+    SharedPermission permission = new SharedPermission();
+    permission.setRequester(requester);
+    permission.setOwner(owner);
+    permission.setPermissionType(VIEW);
+    permission.setStatus(ACCEPT);
+
+    when(userRepository.findById("requester456")).thenReturn(Optional.of(requester));
+    when(userRepository.findById("owner123")).thenReturn(Optional.of(owner));
+    when(sharedPermissionRepository.findByOwnerRequesterPermissionStatus(
+        requester, owner, VIEW, ACCEPT))
+        .thenReturn(Optional.of(permission));
+
+    boolean result = sharedPermissionService.hasPermission("requester456", "owner123", VIEW);
+
+    assertTrue(result);
+  }
+
+  @Test
+  void hasPermission_WithoutValidPermission_Failure() {
+    User requester = new User();
+    requester.setId("requester456");
+    requester.setUserType(REGULAR_USER);
+
+    User owner = new User();
+    owner.setId("owner123");
+
+    when(userRepository.findById("requester456")).thenReturn(Optional.of(requester));
+    when(userRepository.findById("owner123")).thenReturn(Optional.of(owner));
+    when(sharedPermissionRepository.findByOwnerRequesterPermissionStatus(
+        requester, owner, VIEW, ACCEPT))
+        .thenReturn(Optional.empty());
+
+    boolean result = sharedPermissionService.hasPermission("requester456", "owner123", VIEW);
+
+    assertFalse(result);
   }
 }

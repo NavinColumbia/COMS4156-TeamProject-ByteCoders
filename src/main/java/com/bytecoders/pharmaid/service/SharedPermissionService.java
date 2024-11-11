@@ -26,6 +26,7 @@ public class SharedPermissionService {
   private static final int VIEW = 0;
   private static final int EDIT = 1;
 
+  private static final int FIRST_RESPONDER = 1;
 
   @Autowired private SharedPermissionRepository sharedPermissionRepository;
 
@@ -68,8 +69,7 @@ public class SharedPermissionService {
     // Checks if permission already exists and return it if found.
     Optional<SharedPermission> existingPermission =
         sharedPermissionRepository.findByOwnerRequesterPermissionStatus(
-            owner, requester, permissionType, PENDING
-            );
+            owner, requester, permissionType, PENDING);
 
     if (existingPermission.isPresent()) {
       return existingPermission.get();
@@ -112,12 +112,9 @@ public class SharedPermissionService {
       throw new IllegalArgumentException("Only Pending Requests can be accepted");
     }
 
-
     if (!(accept == ACCEPT || accept == DENY)) {
       throw new IllegalArgumentException(" Pending Requests must be accepted or rejected ");
-
     }
-
 
     permission.setStatus(accept);
     return sharedPermissionRepository.save(permission);
@@ -149,5 +146,46 @@ public class SharedPermissionService {
     }
 
     sharedPermissionRepository.delete(permission);
+  }
+
+  /**
+   * Checks if current user can modify another user's records
+   *
+   * @param requesterId user requesting modification
+   * @param ownerId user whose records are being modified
+   * @return true if modification allowed
+   */
+  public boolean hasPermission(String requesterId, String ownerId, Integer permissionType) {
+
+    if (requesterId.equals(ownerId)) {
+      return true;
+    }
+
+    if (!(permissionType == VIEW || permissionType == EDIT)) {
+      throw new IllegalArgumentException("Permission Type should be view or edit");
+    }
+
+    User requester =
+        userRepository
+            .findById(requesterId)
+            .orElseThrow(
+                () ->
+                    new ResponseStatusException(HttpStatus.NOT_FOUND, "Requester User Not found"));
+
+    if (permissionType == VIEW && requester.getUserType() == FIRST_RESPONDER) {
+      return true;
+    }
+
+    User owner =
+        userRepository
+            .findById(ownerId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Owner User Not found"));
+
+    Optional<SharedPermission> editPermission =
+        sharedPermissionRepository.findByOwnerRequesterPermissionStatus(
+            requester, owner, permissionType, ACCEPT);
+
+    return editPermission.isPresent();
   }
 }
