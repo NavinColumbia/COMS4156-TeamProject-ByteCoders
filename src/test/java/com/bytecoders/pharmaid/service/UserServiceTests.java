@@ -5,10 +5,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
+import com.bytecoders.pharmaid.openapi.model.LoginUserRequest;
+import com.bytecoders.pharmaid.openapi.model.RegisterUserRequest;
 import com.bytecoders.pharmaid.repository.UserRepository;
 import com.bytecoders.pharmaid.repository.model.User;
-import com.bytecoders.pharmaid.request.LoginUserRequest;
-import com.bytecoders.pharmaid.request.RegisterUserRequest;
 import com.bytecoders.pharmaid.util.PasswordUtils;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -23,6 +23,7 @@ import org.mockito.stubbing.Answer;
  */
 @ExtendWith(MockitoExtension.class)
 public class UserServiceTests {
+
   @Mock
   private UserRepository userRepository;
 
@@ -66,8 +67,7 @@ public class UserServiceTests {
     mockUser.setHashedPassword("hashedPassword");
 
     when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(mockUser));
-    when(passwordUtils.verifyPassword("password", "hashedPassword"))
-        .thenReturn(true);
+    when(passwordUtils.verifyPassword("password", "hashedPassword")).thenReturn(true);
 
     final Optional<User> userOptional = userService.loginUser(request);
     assertEquals(userOptional, Optional.of(mockUser));
@@ -97,8 +97,7 @@ public class UserServiceTests {
     mockUser.setHashedPassword("hashedPassword");
 
     when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(mockUser));
-    when(passwordUtils.verifyPassword("password", "hashedPassword"))
-        .thenReturn(false);
+    when(passwordUtils.verifyPassword("password", "hashedPassword")).thenReturn(false);
 
     final Optional<User> userOptional = userService.loginUser(request);
     assertEquals(userOptional, Optional.empty());
