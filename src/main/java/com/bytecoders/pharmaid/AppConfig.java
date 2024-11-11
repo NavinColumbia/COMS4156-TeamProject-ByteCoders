@@ -1,10 +1,10 @@
 package com.bytecoders.pharmaid;
 
+import com.bytecoders.pharmaid.security.JwtRequestFilter;
 import com.bytecoders.pharmaid.util.PasswordUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import com.bytecoders.pharmaid.security.JwtRequestFilter;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
