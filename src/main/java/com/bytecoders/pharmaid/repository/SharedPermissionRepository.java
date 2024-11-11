@@ -14,18 +14,16 @@ public interface SharedPermissionRepository extends JpaRepository<SharedPermissi
   /**
    * Finds Shared Permission by owner, requester, permissionType and status.
    *
-   * @param owner owner
-   * @param requester requester
+   * @param owner          owner
+   * @param requester      requester
    * @param permissionType 0 is view, 1 is edit
-   * @param status 0 is pending, 1 accepted, 2 denied, revoked ones are deleted
+   * @param status         0 is pending, 1 accepted, 2 denied, revoked ones are deleted
    * @return Optional permission.
    */
-  Optional<SharedPermission> findByOwnerRequesterPermissionStatus(
-      User owner,
+  Optional<SharedPermission> findByOwnerAndRequesterAndPermissionTypeAndStatus(User owner,
       User requester,
       Integer permissionType,
-      Integer status
-  );
+      Integer status);
 
 
 }

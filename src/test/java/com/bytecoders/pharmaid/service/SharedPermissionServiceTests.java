@@ -26,11 +26,14 @@ import org.springframework.web.server.ResponseStatusException;
 @ExtendWith(MockitoExtension.class)
 public class SharedPermissionServiceTests {
 
-  @Mock private SharedPermissionRepository sharedPermissionRepository;
+  @Mock
+  private SharedPermissionRepository sharedPermissionRepository;
 
-  @Mock private UserRepository userRepository;
+  @Mock
+  private UserRepository userRepository;
 
-  @InjectMocks private SharedPermissionService sharedPermissionService;
+  @InjectMocks
+  private SharedPermissionService sharedPermissionService;
 
   private User owner;
   private User requester;
@@ -59,13 +62,15 @@ public class SharedPermissionServiceTests {
     when(userRepository.findById("requester456")).thenReturn(Optional.of(requester));
 
     // permission doesn't already exist
-    when(sharedPermissionRepository.findByOwnerRequesterPermissionStatus(
-            any(), any(), any(), any()))
-        .thenReturn(Optional.empty());
+    when(sharedPermissionRepository.findByOwnerAndRequesterAndPermissionTypeAndStatus(any(),
+        any(),
+        any(),
+        any())).thenReturn(Optional.empty());
 
     when(sharedPermissionRepository.save(any())).thenReturn(permission);
 
-    SharedPermission result =
+    SharedPermission
+        result =
         sharedPermissionService.createSharingRequest("requester456", "owner123", 0);
 
     assertNotNull(result);
@@ -84,11 +89,13 @@ public class SharedPermissionServiceTests {
     when(userRepository.findById("requester456")).thenReturn(Optional.of(requester));
 
     // permission already exists
-    when(sharedPermissionRepository.findByOwnerRequesterPermissionStatus(
-            any(), any(), any(), any()))
-        .thenReturn(Optional.of(permission));
+    when(sharedPermissionRepository.findByOwnerAndRequesterAndPermissionTypeAndStatus(any(),
+        any(),
+        any(),
+        any())).thenReturn(Optional.of(permission));
 
-    SharedPermission result =
+    SharedPermission
+        result =
         sharedPermissionService.createSharingRequest("requester456", "owner123", 0);
 
     assertNotNull(result);
@@ -103,8 +110,7 @@ public class SharedPermissionServiceTests {
     // set up owner doesn't exist
     when(userRepository.findById("owner123")).thenReturn(Optional.empty());
 
-    assertThrows(
-        ResponseStatusException.class,
+    assertThrows(ResponseStatusException.class,
         () -> sharedPermissionService.createSharingRequest("requester456", "owner123", 0));
   }
 
@@ -114,8 +120,7 @@ public class SharedPermissionServiceTests {
     when(userRepository.findById("owner123")).thenReturn(Optional.of(owner));
     when(userRepository.findById("requester456")).thenReturn(Optional.empty());
 
-    assertThrows(
-        ResponseStatusException.class,
+    assertThrows(ResponseStatusException.class,
         () -> sharedPermissionService.createSharingRequest("requester456", "owner123", 0));
   }
 
@@ -125,8 +130,7 @@ public class SharedPermissionServiceTests {
 
     when(userRepository.findById("requester456")).thenReturn(Optional.of(requester));
 
-    assertThrows(
-        IllegalArgumentException.class,
+    assertThrows(IllegalArgumentException.class,
         () -> sharedPermissionService.createSharingRequest("requester456", "requester456", 0));
   }
 
@@ -136,8 +140,7 @@ public class SharedPermissionServiceTests {
 
     when(userRepository.findById("owner123")).thenReturn(Optional.of(owner));
 
-    assertThrows(
-        IllegalArgumentException.class,
+    assertThrows(IllegalArgumentException.class,
         () -> sharedPermissionService.createSharingRequest("requester456", "owner123", 2));
   }
 
@@ -148,7 +151,8 @@ public class SharedPermissionServiceTests {
     when(sharedPermissionRepository.findById("permission789")).thenReturn(Optional.of(permission));
     when(sharedPermissionRepository.save(any())).thenReturn(permission);
 
-    SharedPermission result =
+    SharedPermission
+        result =
         sharedPermissionService.acceptDenySharingRequest("owner123", "permission789", 1);
 
     assertNotNull(result);
@@ -163,7 +167,8 @@ public class SharedPermissionServiceTests {
     when(sharedPermissionRepository.findById("permission789")).thenReturn(Optional.of(permission));
     when(sharedPermissionRepository.save(any())).thenReturn(permission);
 
-    SharedPermission result =
+    SharedPermission
+        result =
         sharedPermissionService.acceptDenySharingRequest("owner123", "permission789", 2);
 
     assertNotNull(result);
@@ -176,8 +181,7 @@ public class SharedPermissionServiceTests {
     // request with permission id doesn't exist
     when(sharedPermissionRepository.findById("permission789")).thenReturn(Optional.empty());
 
-    assertThrows(
-        ResponseStatusException.class,
+    assertThrows(ResponseStatusException.class,
         () -> sharedPermissionService.acceptDenySharingRequest("owner123", "permission789", 1));
   }
 
@@ -187,8 +191,7 @@ public class SharedPermissionServiceTests {
     // in before each permission's owner is set
     when(sharedPermissionRepository.findById("permission789")).thenReturn(Optional.of(permission));
 
-    assertThrows(
-        ResponseStatusException.class,
+    assertThrows(ResponseStatusException.class,
         () -> sharedPermissionService.acceptDenySharingRequest("wrongOwner", "permission789", 1));
   }
 
@@ -199,8 +202,7 @@ public class SharedPermissionServiceTests {
     permission.setStatus(1);
     when(sharedPermissionRepository.findById("permission789")).thenReturn(Optional.of(permission));
 
-    assertThrows(
-        IllegalArgumentException.class,
+    assertThrows(IllegalArgumentException.class,
         () -> sharedPermissionService.acceptDenySharingRequest("owner123", "permission789", 1));
   }
 
@@ -210,8 +212,7 @@ public class SharedPermissionServiceTests {
     when(sharedPermissionRepository.findById("permission789")).thenReturn(Optional.of(permission));
 
     // accept or deny 1 or 2
-    assertThrows(
-        IllegalArgumentException.class,
+    assertThrows(IllegalArgumentException.class,
         () -> sharedPermissionService.acceptDenySharingRequest("owner123", "permission789", 3));
   }
 
@@ -233,8 +234,7 @@ public class SharedPermissionServiceTests {
     // permission id not found
     when(sharedPermissionRepository.findById("permission789")).thenReturn(Optional.empty());
 
-    assertThrows(
-        ResponseStatusException.class,
+    assertThrows(ResponseStatusException.class,
         () -> sharedPermissionService.revokeSharingPermission("owner123", "permission789"));
   }
 
@@ -245,8 +245,7 @@ public class SharedPermissionServiceTests {
     permission.setStatus(1);
     when(sharedPermissionRepository.findById("permission789")).thenReturn(Optional.of(permission));
 
-    assertThrows(
-        ResponseStatusException.class,
+    assertThrows(ResponseStatusException.class,
         () -> sharedPermissionService.revokeSharingPermission("wrongOwner", "permission789"));
   }
 
@@ -257,8 +256,7 @@ public class SharedPermissionServiceTests {
     when(sharedPermissionRepository.findById("permission789")).thenReturn(Optional.of(permission));
 
     // can't call revoke on a yet to be accepted request
-    assertThrows(
-        IllegalArgumentException.class,
+    assertThrows(IllegalArgumentException.class,
         () -> sharedPermissionService.revokeSharingPermission("owner123", "permission789"));
   }
 }
