@@ -2,6 +2,7 @@ package com.bytecoders.pharmaid;
 
 import com.bytecoders.pharmaid.openapi.model.CreatePrescriptionRequest;
 import com.bytecoders.pharmaid.openapi.model.LoginUserRequest;
+import com.bytecoders.pharmaid.openapi.model.LoginUserResponse;
 import com.bytecoders.pharmaid.openapi.model.RegisterUserRequest;
 import com.bytecoders.pharmaid.repository.model.Medication;
 import com.bytecoders.pharmaid.repository.model.Prescription;
@@ -9,7 +10,6 @@ import com.bytecoders.pharmaid.repository.model.User;
 import com.bytecoders.pharmaid.service.MedicationService;
 import com.bytecoders.pharmaid.service.PrescriptionService;
 import com.bytecoders.pharmaid.service.UserService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Optional;
@@ -78,17 +78,15 @@ public class PharmaidController {
    *     message if the login is unsuccessful
    */
   @PostMapping(path = "/login")
-  public ResponseEntity<String> login(@RequestBody @Valid LoginUserRequest request) {
+  public ResponseEntity<?> login(@RequestBody @Valid LoginUserRequest request) {
     try {
-      Optional<User> user = userService.loginUser(request);
+      Optional<LoginUserResponse> jwt = userService.loginUser(request);
 
-      if (user.isEmpty()) {
-        return new ResponseEntity<>("Forbidden", HttpStatus.UNAUTHORIZED);
+      if (jwt.isEmpty()) {
+        return new ResponseEntity<>("Invalid email or password", HttpStatus.UNAUTHORIZED);
       }
+      return new ResponseEntity<>(jwt.get(), HttpStatus.OK);
 
-      ObjectMapper mapper = new ObjectMapper();
-      String json = mapper.writeValueAsString(user.get());
-      return new ResponseEntity<>(json, HttpStatus.OK);
     } catch (Exception e) {
       return new ResponseEntity<>("Unexpected error encountered during login",
           HttpStatus.INTERNAL_SERVER_ERROR);
