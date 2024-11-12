@@ -9,6 +9,7 @@ import java.security.Key;
 import java.util.Date;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
  * Utils to generate, parse, and validate JSON Web Tokens (JWT).
@@ -60,5 +61,15 @@ public class JwtUtils {
   private Key getSignInKey() {
     byte[] keyBytes = Decoders.BASE64.decode(secretKey);
     return Keys.hmacShaKeyFor(keyBytes);
+  }
+
+  public String getLoggedInUserId() {
+    org.springframework.security.core.Authentication
+        authentication =
+        SecurityContextHolder.getContext().getAuthentication();
+    if (authentication != null) {
+      return (String) authentication.getPrincipal();
+    }
+    return null;
   }
 }
