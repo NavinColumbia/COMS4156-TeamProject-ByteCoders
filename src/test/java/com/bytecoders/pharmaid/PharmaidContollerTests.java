@@ -27,7 +27,9 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-/** This class represents a set of unit tests for {@code PharmaidController} class. */
+/**
+ * This class represents a set of unit tests for {@code PharmaidController} class.
+ */
 @WebMvcTest(PharmaidController.class)
 public class PharmaidContollerTests {
 
@@ -74,7 +76,9 @@ public class PharmaidContollerTests {
     assertEquals(actualUser.getBody(), "Something went wrong");
   }
 
-  /** Test for successful user login. */
+  /**
+   * Test for successful user login.
+   */
   @Test
   void testLoginSuccess() throws Exception {
     LoginUserRequest request = new LoginUserRequest();
@@ -93,7 +97,9 @@ public class PharmaidContollerTests {
     assertEquals(mockLoginResponse, response.getBody());
   }
 
-  /** Test for failed user login. */
+  /**
+   * Test for failed user login.
+   */
   @Test
   void testLoginFailed() {
     LoginUserRequest request = new LoginUserRequest();
@@ -107,7 +113,9 @@ public class PharmaidContollerTests {
     assertEquals("Invalid email or password", response.getBody());
   }
 
-  /** Test for getting all medications. */
+  /**
+   * Test for getting all medications.
+   */
   @Test
   void testGetAllMedications() {
     Medication med1 = new Medication();
@@ -122,7 +130,9 @@ public class PharmaidContollerTests {
     assertEquals(Arrays.asList(med1, med2), response.getBody());
   }
 
-  /** Test for adding a prescription successfully. */
+  /**
+   * Test for adding a prescription successfully.
+   */
   @Test
   void testAddPrescriptionSuccess() {
 
@@ -154,7 +164,9 @@ public class PharmaidContollerTests {
     assertEquals(mockPrescription, response.getBody());
   }
 
-  /** Test for adding a prescription with non-existent user. */
+  /**
+   * Test for adding a prescription with non-existent user.
+   */
   @Test
   void testAddPrescriptionUserNotFound() {
     String userId = "nonExistentUserId";
@@ -167,7 +179,9 @@ public class PharmaidContollerTests {
     assertEquals("Provided userId does not exist", response.getBody());
   }
 
-  /** Test for getting prescriptions for a user. */
+  /**
+   * Test for getting prescriptions for a user.
+   */
   @Test
   void testGetPrescriptionsForUser() {
     String userId = "userId";
@@ -180,15 +194,18 @@ public class PharmaidContollerTests {
     prescription2.setPrescriptionId("prescription2");
 
     when(userService.getUser(userId)).thenReturn(Optional.of(mockUser));
-    when(prescriptionService.getPrescriptionsForUser(userId)).thenReturn(Arrays.asList(prescription1,
-        prescription2));
+    when(prescriptionService.getPrescriptionsForUser(userId)).thenReturn(
+        Arrays.asList(prescription1,
+            prescription2));
 
     ResponseEntity<?> response = testController.getPrescriptionsForUser(userId);
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertEquals(Arrays.asList(prescription1, prescription2), response.getBody());
   }
 
-  /** Test for getting prescriptions for a non-existent user. */
+  /**
+   * Test for getting prescriptions for a non-existent user.
+   */
   @Test
   void testGetPrescriptionsForNonExistentUser() {
     String userId = "nonExistentUserId";

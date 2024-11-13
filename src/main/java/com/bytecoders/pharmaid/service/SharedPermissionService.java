@@ -19,6 +19,8 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class SharedPermissionService {
 
+  private static final int FIRST_RESPONDER = 1;
+
   private static final int PENDING = 0;
   private static final int ACCEPT = 1;
   private static final int DENY = 2;
@@ -105,11 +107,11 @@ public class SharedPermissionService {
 
     if (!permission.getOwner().getId().equals(ownerId)) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-          " Not Authorized to accept this request ");
+          " Not Authorized to accept or deny this request ");
     }
 
     if (permission.getStatus() != PENDING) {
-      throw new IllegalArgumentException("Only Pending Requests can be accepted");
+      throw new IllegalArgumentException("Only Pending Requests can be accepted or denied");
     }
 
     if (!(accept == ACCEPT || accept == DENY)) {
@@ -145,5 +147,46 @@ public class SharedPermissionService {
     }
 
     sharedPermissionRepository.delete(permission);
+  }
+
+  /**
+   * Checks if current user can modify another user's records.
+   *
+   * @param requesterId user requesting modification
+   * @param ownerId     user whose records are being modified
+   * @return true if modification allowed
+   */
+  public boolean hasPermission(String requesterId, String ownerId, Integer permissionType) {
+
+    if (requesterId.equals(ownerId)) {
+      return true;
+    }
+
+    if (!(permissionType == VIEW || permissionType == EDIT)) {
+      throw new IllegalArgumentException("Permission Type should be view or edit");
+    }
+
+    User requester =
+        userRepository
+            .findById(requesterId)
+            .orElseThrow(
+                () ->
+                    new ResponseStatusException(HttpStatus.NOT_FOUND, "Requester User Not found"));
+
+    if (permissionType == VIEW && requester.getUserType() == FIRST_RESPONDER) {
+      return true;
+    }
+
+    User owner =
+        userRepository
+            .findById(ownerId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Owner User Not found"));
+
+    Optional<SharedPermission> editPermission =
+        sharedPermissionRepository.findByOwnerAndRequesterAndPermissionTypeAndStatus(
+            requester, owner, permissionType, ACCEPT);
+
+    return editPermission.isPresent();
   }
 }

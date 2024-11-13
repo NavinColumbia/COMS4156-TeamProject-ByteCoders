@@ -8,8 +8,8 @@ import io.jsonwebtoken.security.Keys;
 import java.security.Key;
 import java.util.Date;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
 
 /**
  * Utils to generate, parse, and validate JSON Web Tokens (JWT).
@@ -63,7 +63,10 @@ public class JwtUtils {
     return Keys.hmacShaKeyFor(keyBytes);
   }
 
-  public String getLoggedInUserId() {
+  /**
+   * Fetches logged-in user.
+   */
+  public static String getLoggedInUserId() {
     org.springframework.security.core.Authentication
         authentication =
         SecurityContextHolder.getContext().getAuthentication();
