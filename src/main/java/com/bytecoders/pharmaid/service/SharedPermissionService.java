@@ -1,192 +1,100 @@
 package com.bytecoders.pharmaid.service;
 
+import com.bytecoders.pharmaid.openapi.model.SharePermissionType;
+import com.bytecoders.pharmaid.openapi.model.ShareRequestStatus;
 import com.bytecoders.pharmaid.repository.SharedPermissionRepository;
-import com.bytecoders.pharmaid.repository.UserRepository;
 import com.bytecoders.pharmaid.repository.model.SharedPermission;
 import com.bytecoders.pharmaid.repository.model.User;
-import java.util.Optional;
+import com.bytecoders.pharmaid.util.ServiceUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
-/**
- * Has methods to create, accept, deny, revoke permission share requests. Logic to ensure requester
- * is current user yet be added.
- */
+/** Functionality to create, accept, deny, revoke permission share requests. */
 @Slf4j
 @Service
 public class SharedPermissionService {
-
-  private static final int FIRST_RESPONDER = 1;
-
-  private static final int PENDING = 0;
-  private static final int ACCEPT = 1;
-  private static final int DENY = 2;
-
-  private static final int VIEW = 0;
-  private static final int EDIT = 1;
-
 
   @Autowired
   private SharedPermissionRepository sharedPermissionRepository;
 
   @Autowired
-  private UserRepository userRepository;
+  private UserService userService;
+
+  @Autowired
+  private ServiceUtils serviceUtils;
+
+  @Autowired
+  private SharedPermissionValidator permissionValidator;
 
   /**
    * Creates a new sharing request.
    *
    * @param ownerId        Id of owner.
-   * @param permissionType 0 if view, 1 if edit.
+   * @param permissionType the {@link SharePermissionType} for the share request
    * @return SharedPermission object.
    */
-  public SharedPermission createSharingRequest(String requesterId,
-      String ownerId,
-      Integer permissionType) {
+  public SharedPermission createSharingRequest(
+      String requesterId, String ownerId, SharePermissionType permissionType) {
+    // find owner and requester Users; throw exception if one does not exist
+    User owner = userService.getUser(ownerId);
+    User requester = userService.getUser(requesterId);
 
-    User
-        owner =
-        userRepository.findById(ownerId)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                "User not found with ID: " + ownerId));
+    // ensure valid setup for a share request
+    permissionValidator.validateCreateShareRequestSetup(owner, requester, permissionType);
 
-    if (ownerId.equals(requesterId)) {
-      throw new IllegalArgumentException("Cannot create shared permission with self");
-    }
-
-    if (!(permissionType == VIEW || permissionType == EDIT)) {
-      throw new IllegalArgumentException("Permission Type should be view or edit");
-    }
-
-    User
-        requester =
-        userRepository.findById(requesterId)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                "User not found with ID: " + requesterId));
-
-    // Checks if permission already exists and return it if found.
-    Optional<SharedPermission>
-        existingPermission =
-        sharedPermissionRepository.findByOwnerAndRequesterAndPermissionTypeAndStatus(owner,
-            requester,
-            permissionType,
-            PENDING);
-
-    if (existingPermission.isPresent()) {
-      return existingPermission.get();
-    }
-
+    // set attributes for permission
     SharedPermission permission = new SharedPermission();
     permission.setOwner(owner);
     permission.setRequester(requester);
-    permission.setPermissionType(permissionType);
-    permission.setStatus(PENDING);
-
+    permission.setSharePermissionType(permissionType);
+    permission.setStatus(permissionValidator.retrieveShareRequestStatus(requester.getUserType()));
     return sharedPermissionRepository.save(permission);
   }
 
   /**
-   * Accepts/Denies a share request.
+   * Decision of a health records owner to act a share request.
    *
-   * @param ownerId      owner id
-   * @param permissionId id of permission to be accepted/denied
-   * @param accept       1 if accept, 2 if deny
+   * @param ownerId        owner id
+   * @param shareRequestId id of share request to be acted on
+   * @param requestStatus  The action taken to a share request
    * @return SharedPermission object
    */
-  public SharedPermission acceptDenySharingRequest(String ownerId,
-      String permissionId,
-      int accept) {
+  public SharedPermission shareRequestAction(
+      String ownerId, String shareRequestId, ShareRequestStatus requestStatus) {
+    SharedPermission permission = getPermission(shareRequestId);
 
-    SharedPermission
-        permission =
-        sharedPermissionRepository.findById(permissionId)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                " Request not found with id : " + permissionId));
+    // Throw IllegalArgumentException if any property is invalid in the share request action
+    permissionValidator.validateShareRequestAction(permission, ownerId, requestStatus);
 
-    if (!permission.getOwner().getId().equals(ownerId)) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-          " Not Authorized to accept or deny this request ");
-    }
-
-    if (permission.getStatus() != PENDING) {
-      throw new IllegalArgumentException("Only Pending Requests can be accepted or denied");
-    }
-
-    if (!(accept == ACCEPT || accept == DENY)) {
-      throw new IllegalArgumentException(" Pending Requests must be accepted or rejected ");
-
-    }
-
-    permission.setStatus(accept);
+    // update permission status
+    permission.setStatus(requestStatus);
     return sharedPermissionRepository.save(permission);
   }
 
   /**
    * Revokes an already accepted share permission.
    *
-   * @param ownerId      owner id
-   * @param permissionId share request id
+   * @param ownerId        owner id
+   * @param shareRequestId share request id
    */
-  public void revokeSharingPermission(String ownerId, String permissionId) {
+  public void revokeSharingPermission(String ownerId, String shareRequestId) {
+    SharedPermission permission = getPermission(shareRequestId);
 
-    SharedPermission
-        permission =
-        sharedPermissionRepository.findById(permissionId)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                " Request not found with id : " + permissionId));
+    // Throw IllegalArgumentException if any property is invalid when revoking the permission
+    permissionValidator.validateRevokeSharePermission(permission, ownerId);
 
-    if (!permission.getOwner().getId().equals(ownerId)) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-          " Not Authorized to revoke this request ");
-    }
-
-    if (permission.getStatus() != ACCEPT) {
-      throw new IllegalArgumentException("Can only revoke already accepted shared permissions");
-    }
-
+    // delete the permission
     sharedPermissionRepository.delete(permission);
   }
 
   /**
-   * Checks if current user can modify another user's records.
+   * Returns a SharedPermission or throws a ResponseStatusException.
    *
-   * @param requesterId user requesting modification
-   * @param ownerId     user whose records are being modified
-   * @return true if modification allowed
+   * @param shareRequestId ID pertaining to the share request
    */
-  public boolean hasPermission(String requesterId, String ownerId, Integer permissionType) {
-
-    if (requesterId.equals(ownerId)) {
-      return true;
-    }
-
-    if (!(permissionType == VIEW || permissionType == EDIT)) {
-      throw new IllegalArgumentException("Permission Type should be view or edit");
-    }
-
-    User requester =
-        userRepository
-            .findById(requesterId)
-            .orElseThrow(
-                () ->
-                    new ResponseStatusException(HttpStatus.NOT_FOUND, "Requester User Not found"));
-
-    if (permissionType == VIEW && requester.getUserType() == FIRST_RESPONDER) {
-      return true;
-    }
-
-    User owner =
-        userRepository
-            .findById(ownerId)
-            .orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Owner User Not found"));
-
-    Optional<SharedPermission> editPermission =
-        sharedPermissionRepository.findByOwnerAndRequesterAndPermissionTypeAndStatus(
-            requester, owner, permissionType, ACCEPT);
-
-    return editPermission.isPresent();
+  public SharedPermission getPermission(String shareRequestId) {
+    return serviceUtils.findEntityById(shareRequestId, "shareRequest",
+        sharedPermissionRepository);
   }
 }

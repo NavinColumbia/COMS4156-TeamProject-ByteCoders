@@ -1,7 +1,10 @@
 package com.bytecoders.pharmaid.repository;
 
+import com.bytecoders.pharmaid.openapi.model.SharePermissionType;
+import com.bytecoders.pharmaid.openapi.model.ShareRequestStatus;
 import com.bytecoders.pharmaid.repository.model.SharedPermission;
 import com.bytecoders.pharmaid.repository.model.User;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -14,16 +17,27 @@ public interface SharedPermissionRepository extends JpaRepository<SharedPermissi
   /**
    * Finds Shared Permission by owner, requester, permissionType and status.
    *
-   * @param owner          owner
-   * @param requester      requester
-   * @param permissionType 0 is view, 1 is edit
-   * @param status         0 is pending, 1 accepted, 2 denied, revoked ones are deleted
+   * @param owner          owner {@link User} of the health records
+   * @param requester      the {@link User} requesting access to the health records
+   * @param permissionType the {@link SharePermissionType}
+   * @param status         the {@link ShareRequestStatus}
    * @return Optional permission.
    */
-  Optional<SharedPermission> findByOwnerAndRequesterAndPermissionTypeAndStatus(User owner,
+  Optional<SharedPermission> findByOwnerAndRequesterAndSharePermissionTypeAndStatus(
+      User owner, User requester, SharePermissionType permissionType, ShareRequestStatus status);
+
+  /**
+   * Finds Shared Permission by owner, requester, permissionType and status.
+   *
+   * @param owner           owner {@link User} of the health records
+   * @param requester       the {@link User} requesting access to the health records
+   * @param permissionTypes a list of {@link SharePermissionType} to check for
+   * @param statuses        a list of {@link ShareRequestStatus} to check for
+   * @return Optional permission.
+   */
+  Optional<SharedPermission> findFirstByOwnerAndRequesterAndSharePermissionTypeInAndStatusIn(
+      User owner,
       User requester,
-      Integer permissionType,
-      Integer status);
-
-
+      List<SharePermissionType> permissionTypes,
+      List<ShareRequestStatus> statuses);
 }

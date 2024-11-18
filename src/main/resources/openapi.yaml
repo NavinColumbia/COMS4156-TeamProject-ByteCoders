@@ -180,7 +180,7 @@ paths:
                 type: string
                 example: "Unexpected error encountered while getting user prescriptions"
 
-  /share/request/{ownerId}:
+  /users/{ownerId}/requests:
     post:
       operationId: requestAccess
       summary: Request access to another user's prescriptions
@@ -209,34 +209,33 @@ paths:
             text/plain:
               schema:
                 type: string
+                description: Bad request returned when owner raises request to his own prescriptions.
                 example: "Cannot create shared permission with self"
-                description: "Bad Request returned when owner raises request to his own prescriptions."
-
         "404":
-          description: User not found
-          content:
-            text/plain:
-              schema:
-                type: string
-                example: "User not found with ID : {id}"
+          $ref: "#/components/responses/UserDoesNotExist"
         "500":
           description: Internal server error
           content:
             text/plain:
               schema:
                 type: string
-                example: "Internal Server Error"
+                example: "Unexpected error encountered while creating a share request"
 
-  /share/{requestId}/accept:
+  /users/{ownerId}/requests/{shareRequestId}/accept:
     post:
-      operationId: acceptRequest
+      operationId: acceptShareRequest
       summary: Accepts a sharing request
       parameters:
-        - name: requestId
+        - name: ownerId
           in: path
           required: true
           schema:
-            type: string
+            $ref: "#/components/schemas/UserId"
+        - name: shareRequestId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ShareRequestId"
       responses:
         "200":
           description: Request accepted, success
@@ -245,44 +244,39 @@ paths:
               schema:
                 $ref: "#/components/schemas/SharedPermission"
         "400":
-          description: Bad Request
+          description: Bad request
           content:
             text/plain:
               schema:
                 type: string
-                example: "Only Pending Requests can be accepted or denied"
+                example: "Only Pending requests can be accepted or denied"
         "403":
-          description: Not authorized
-          content:
-            text/plain:
-              schema:
-                type: string
-                example: "Not Authorized to accept or deny this request"
+          $ref: "#/components/responses/NotAuthorized"
         "404":
-          description: Request not found
-          content:
-            text/plain:
-              schema:
-                type: string
-                example: "Request not found with id : {requestId}"
+          $ref: "#/components/responses/ShareRequestDoesNotExist"
         "500":
           description: Internal server error
           content:
             text/plain:
               schema:
                 type: string
-                example: "Internal Server Error."
+                example: "Unexpected error encountered while accepting a share request"
 
-  /share/{requestId}/deny:
+  /users/{ownerId}/requests/{shareRequestId}/deny:
     post:
-      operationId: denyRequest
+      operationId: denyShareRequest
       summary: Deny a share request
       parameters:
-        - name: requestId
+        - name: ownerId
           in: path
           required: true
           schema:
-            type: string
+            $ref: "#/components/schemas/UserId"
+        - name: shareRequestId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ShareRequestId"
       responses:
         "200":
           description: Request denied, success
@@ -291,44 +285,39 @@ paths:
               schema:
                 $ref: "#/components/schemas/SharedPermission"
         "400":
-          description: Bad Request
+          description: Bad request
           content:
             text/plain:
               schema:
                 type: string
-                example: "Only Pending Requests can be accepted or denied"
+                example: "Only Pending requests can be accepted or denied"
         "403":
-          description: Not authorized
-          content:
-            text/plain:
-              schema:
-                type: string
-                example: "Not Authorized to accept or deny this request"
+          $ref: "#/components/responses/NotAuthorized"
         "404":
-          description: Request not found
-          content:
-            text/plain:
-              schema:
-                type: string
-                example: "Request not found with id : {requestId}"
+          $ref: "#/components/responses/ShareRequestDoesNotExist"
         "500":
           description: Internal server error
           content:
             text/plain:
               schema:
                 type: string
-                example: "Internal Server Error"
+                example: "Unexpected error encountered while denying a share request"
 
-  /share/{requestId}/revoke:
+  /users/{ownerId}/requests/{shareRequestId}/revoke:
     post:
-      operationId: revokeAccess
+      operationId: revokeShareAccess
       summary: Revoke an accepted sharing permission
       parameters:
-        - name: requestId
+        - name: ownerId
           in: path
           required: true
           schema:
-            type: string
+            $ref: "#/components/schemas/UserId"
+        - name: shareRequestId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ShareRequestId"
       responses:
         "200":
           description: Revoked Access, success
@@ -345,26 +334,16 @@ paths:
                 type: string
                 example: "Can only revoke already accepted shared permissions"
         "403":
-          description: Not authorized
-          content:
-            text/plain:
-              schema:
-                type: string
-                example: "Not Authorized to revoke this request"
+          $ref: "#/components/responses/NotAuthorized"
         "404":
-          description: Request not found
-          content:
-            text/plain:
-              schema:
-                type: string
-                example: "Request not found with id : {requestId}"
+          $ref: "#/components/responses/ShareRequestDoesNotExist"
         "500":
           description: Internal server error
           content:
             text/plain:
               schema:
                 type: string
-                example: "Internal Server Error"
+                example: "Unexpected error encountered while revoking a share permission"
 
 
 components:
@@ -439,6 +418,48 @@ components:
       description: Whether the user is currently taking their prescription or not.
       example: true
 
+    # SharingPermissions Attributes
+    ShareRequestId:
+      type: string
+      description: Unique identifier for the share request.
+      example: "9101d183-26e6-45b7-a8c4-25f24fdb36fa"
+      readOnly: true
+
+    # Enums
+    UserType:
+      type: string
+      description: |
+        The role a user is designated at registration:
+        - "PATIENT" can only VIEW/EDIT their own health records
+        - "HEALTHCARE_PROVIDER" can request access to VIEW/EDIT another user's health records
+        - "FIRST_RESPONDER" can view any user's health records
+      enum:
+        - PATIENT
+        - HEALTHCARE_PROVIDER
+        - FIRST_RESPONDER
+
+    ShareRequestStatus:
+      type: string
+      description: |
+        The status of a current share request to VIEW/EDIT a user's health records:
+        - "PENDING" for a pending share request
+        - "ACCEPT" for an accepted share request
+        - "DENY" for a denied share request
+      enum:
+        - PENDING
+        - ACCEPT
+        - DENY
+
+    SharePermissionType:
+      type: string
+      description: |
+        User access level for health records:
+        - "VIEW" for read-only
+        - "EDIT" for modification
+      enum:
+        - VIEW
+        - EDIT
+
     # Entity Models
     User:
       type: object
@@ -449,6 +470,8 @@ components:
           $ref: "#/components/schemas/UserEmail"
         hashedPassword:
           $ref: "#/components/schemas/UserPassword"
+        userType:
+          $ref: "#/components/schemas/UserType"
 
     Medication:
       type: object
@@ -486,14 +509,10 @@ components:
           $ref: "#/components/schemas/User"
         requester:
           $ref: "#/components/schemas/User"
-        status:
-          type: integer
-          description: "Sharing request status 0 -> Pending, 1 -> Accepted, 2->Denied"
-          example: 0
-        permissionType:
-          type: integer
-          description: "Permission Type 0->View, 1->Edit"
-          example: 0
+        shareRequestStatus:
+          $ref: "#/components/schemas/ShareRequestStatus"
+        sharePermissionType:
+          $ref: "#/components/schemas/SharePermissionType"
 
     # Request Objects
     RegisterUserRequest:
@@ -503,9 +522,12 @@ components:
           $ref: "#/components/schemas/UserEmail"
         password:
           $ref: "#/components/schemas/UserPassword"
+        userType:
+          $ref: "#/components/schemas/UserType"
       required:
         - email
         - password
+        - userType
 
     LoginUserRequest:
       type: object
@@ -517,18 +539,6 @@ components:
       required:
         - email
         - password
-
-    LoginUserResponse:
-      type: object
-      properties:
-        userId:
-          $ref: "#/components/schemas/UserId"
-        email:
-          $ref: "#/components/schemas/UserEmail"
-        token:
-          type: string
-          description: JWT token for user authentication
-          example: "#/components/schemas/UserEmail"
 
     CreatePrescriptionRequest:
       properties:
@@ -555,12 +565,21 @@ components:
     ShareRequest:
       type: object
       properties:
-        permissionType:
-          type: integer
-          description: "Permission Type, 0->View, 1->Edit"
-          example: 0
+        sharePermissionType:
+          $ref: "#/components/schemas/SharePermissionType"
       required:
-        - permissionType
+        - sharePermissionType
+
+    # Response objects
+    LoginUserResponse:
+      type: object
+      properties:
+        userId:
+          $ref: "#/components/schemas/UserId"
+        email:
+          $ref: "#/components/schemas/UserEmail"
+        token:
+          $ref: "#/components/schemas/UserJwtToken"
 
 
   responses:
@@ -572,6 +591,14 @@ components:
             type: string
             example: "Provided userId does not exist"
 
+    ShareRequestDoesNotExist:
+      description: Provided shareRequestId does not exist
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: "Provided shareRequestId does not exist"
+
     MedicationDoesNotExist:
       description: Provided medicationId does not exist
       content:
@@ -580,6 +607,10 @@ components:
             type: string
             example: "Provided medicationId does not exist"
 
-
-
-
+    NotAuthorized:
+      description: Not authorized to make a request
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: "Not authorized to make this request"

@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
  */
 @ExtendWith(MockitoExtension.class)
 public class MedicationServiceTests {
+
   @Mock
   private MedicationRepository medicationRepository;
 
@@ -26,7 +27,7 @@ public class MedicationServiceTests {
   @Test
   public void testGetAllMedications() {
     final Medication mockMedication = new Medication();
-    mockMedication.setMedicationId("someMedicationId");
+    mockMedication.setId("someMedicationId");
     mockMedication.setMedicationName("Ibuprofen");
 
     when(medicationRepository.findAll()).thenReturn(List.of(mockMedication));

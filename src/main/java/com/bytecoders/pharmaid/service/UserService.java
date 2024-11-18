@@ -7,6 +7,7 @@ import com.bytecoders.pharmaid.repository.UserRepository;
 import com.bytecoders.pharmaid.repository.model.User;
 import com.bytecoders.pharmaid.util.JwtUtils;
 import com.bytecoders.pharmaid.util.PasswordUtils;
+import com.bytecoders.pharmaid.util.ServiceUtils;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -24,7 +25,10 @@ public class UserService {
   private PasswordUtils passwordUtils;
 
   @Autowired
-  private JwtUtils jwtUtil;
+  private JwtUtils jwtUtils;
+
+  @Autowired
+  private ServiceUtils serviceUtils;
 
   /**
    * Register new user service.
@@ -36,6 +40,7 @@ public class UserService {
     final User newUser = new User();
     newUser.setEmail(registerUserRequest.getEmail());
     newUser.setHashedPassword(passwordUtils.hashPassword(registerUserRequest.getPassword()));
+    newUser.setUserType(registerUserRequest.getUserType());
     return userRepository.save(newUser);
   }
 
@@ -52,13 +57,11 @@ public class UserService {
       return Optional.empty();
     }
 
-    final boolean
-        isCorrectPassword =
-        passwordUtils.verifyPassword(loginUserRequest.getPassword(),
-            userWithEmail.get().getHashedPassword());
+    final boolean isCorrectPassword = passwordUtils.verifyPassword(loginUserRequest.getPassword(),
+        userWithEmail.get().getHashedPassword());
 
     if (isCorrectPassword) {
-      String token = jwtUtil.generateToken(userWithEmail.get().getId());
+      String token = jwtUtils.generateToken(userWithEmail.get().getId());
       User user = userWithEmail.get();
 
       LoginUserResponse loginResponse = new LoginUserResponse();
@@ -71,8 +74,12 @@ public class UserService {
     return Optional.empty();
   }
 
-
-  public Optional<User> getUser(String userId) {
-    return userRepository.findById(userId);
+  /**
+   * Returns a User or throws a ResponseStatusException.
+   *
+   * @param userId Id of the User
+   */
+  public User getUser(String userId) {
+    return serviceUtils.findEntityById(userId, "user", userRepository);
   }
 }

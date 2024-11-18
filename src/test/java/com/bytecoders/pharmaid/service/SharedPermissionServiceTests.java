@@ -2,21 +2,23 @@ package com.bytecoders.pharmaid.service;
 
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.bytecoders.pharmaid.openapi.model.SharePermissionType;
+import com.bytecoders.pharmaid.openapi.model.ShareRequestStatus;
+import com.bytecoders.pharmaid.openapi.model.UserType;
 import com.bytecoders.pharmaid.repository.SharedPermissionRepository;
-import com.bytecoders.pharmaid.repository.UserRepository;
 import com.bytecoders.pharmaid.repository.model.SharedPermission;
 import com.bytecoders.pharmaid.repository.model.User;
-import java.util.Optional;
+import com.bytecoders.pharmaid.util.ServiceUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,18 +34,17 @@ import org.springframework.web.server.ResponseStatusException;
 @ExtendWith(MockitoExtension.class)
 public class SharedPermissionServiceTests {
 
-  private static final int FIRST_RESPONDER = 1;
-  private static final int REGULAR_USER = 0;
-  private static final int VIEW = 0;
-  private static final int EDIT = 1;
-  private static final int ACCEPT = 1;
-
-
   @Mock
   private SharedPermissionRepository sharedPermissionRepository;
 
   @Mock
-  private UserRepository userRepository;
+  private UserService userService;
+
+  @Mock
+  private ServiceUtils serviceUtils;
+
+  @Mock
+  private SharedPermissionValidator permissionValidator;
 
   @InjectMocks
   private SharedPermissionService sharedPermissionService;
@@ -51,352 +52,161 @@ public class SharedPermissionServiceTests {
   private User owner;
   private User requester;
   private SharedPermission permission;
+  private final String nonExistentUserId = "nonExistentUser123";
 
   @BeforeEach
   void setUp() {
+    // owner user of the health records
     owner = new User();
     owner.setId("owner123");
 
+    // user making a request to act on another user's health records
     requester = new User();
     requester.setId("requester456");
+    requester.setUserType(UserType.HEALTHCARE_PROVIDER);
 
+    // a permission set between owner and requester
     permission = new SharedPermission();
     permission.setId("permission789");
     permission.setOwner(owner);
     permission.setRequester(requester);
-    permission.setPermissionType(0);
-    permission.setStatus(0);
+    permission.setSharePermissionType(SharePermissionType.VIEW);
+    permission.setStatus(ShareRequestStatus.PENDING);
   }
 
   @Test
   void createSharingRequest_Success() {
-    when(userRepository.findById("owner123")).thenReturn(Optional.of(owner));
+    // mock owner, requester, and saved permission
+    when(userService.getUser(owner.getId())).thenReturn(owner);
+    when(userService.getUser(requester.getId())).thenReturn(requester);
+    when(sharedPermissionRepository.save(any(SharedPermission.class))).thenReturn(permission);
 
-    when(userRepository.findById("requester456")).thenReturn(Optional.of(requester));
+    SharedPermission result =
+        sharedPermissionService.createSharingRequest(requester.getId(), owner.getId(),
+            permission.getSharePermissionType());
 
-    // permission doesn't already exist
-    when(sharedPermissionRepository.findByOwnerAndRequesterAndPermissionTypeAndStatus(any(),
-        any(),
-        any(),
-        any())).thenReturn(Optional.empty());
-
-    when(sharedPermissionRepository.save(any())).thenReturn(permission);
-
-    SharedPermission
-        result =
-        sharedPermissionService.createSharingRequest("requester456", "owner123", 0);
-
+    // assertions and verify
     assertNotNull(result);
     assertEquals(owner, result.getOwner());
     assertEquals(requester, result.getRequester());
-    assertEquals(0, result.getPermissionType());
-    assertEquals(0, result.getStatus());
-    // verify save was called only once
-    verify(sharedPermissionRepository).save(any());
+    assertEquals(permission.getSharePermissionType(), result.getSharePermissionType());
+    assertEquals(permission.getStatus(), result.getStatus());
+    verify(permissionValidator).validateCreateShareRequestSetup(owner, requester,
+        SharePermissionType.VIEW);
+    verify(sharedPermissionRepository).save(any(SharedPermission.class));
   }
 
   @Test
-  void createSharingRequest_ExistingPermission() {
+  void shareRequestAction_AcceptSuccess() {
+    when(serviceUtils.findEntityById(eq(permission.getId()), eq("shareRequest"),
+        eq(sharedPermissionRepository))).thenReturn(permission);
+    when(sharedPermissionRepository.save(any(SharedPermission.class))).thenReturn(permission);
 
-    when(userRepository.findById("owner123")).thenReturn(Optional.of(owner));
-    when(userRepository.findById("requester456")).thenReturn(Optional.of(requester));
+    // ACCEPT share action
+    SharedPermission result =
+        sharedPermissionService.shareRequestAction(owner.getId(), permission.getId(),
+            ShareRequestStatus.ACCEPT);
 
-    // permission already exists
-    when(sharedPermissionRepository.findByOwnerAndRequesterAndPermissionTypeAndStatus(any(),
-        any(),
-        any(),
-        any())).thenReturn(Optional.of(permission));
-
-    SharedPermission
-        result =
-        sharedPermissionService.createSharingRequest("requester456", "owner123", 0);
-
+    // assertions and verify
     assertNotNull(result);
+    assertEquals(ShareRequestStatus.ACCEPT, result.getStatus());
     assertEquals(permission, result);
+    verify(permissionValidator).validateShareRequestAction(permission, owner.getId(),
+        ShareRequestStatus.ACCEPT);
+    verify(sharedPermissionRepository).save(permission);
+  }
 
-    // verify save was never called
+  @Test
+  void shareRequestAction_DenySuccess() {
+    when(serviceUtils.findEntityById(eq(permission.getId()), eq("shareRequest"),
+        eq(sharedPermissionRepository))).thenReturn(permission);
+    when(sharedPermissionRepository.save(any(SharedPermission.class))).thenReturn(permission);
+
+    // DENY share action
+    SharedPermission result =
+        sharedPermissionService.shareRequestAction(owner.getId(), permission.getId(),
+            ShareRequestStatus.DENY);
+
+    // assertions and verify
+    assertNotNull(result);
+    assertEquals(ShareRequestStatus.DENY, result.getStatus());
+    assertEquals(permission, result);
+    verify(permissionValidator).validateShareRequestAction(permission, owner.getId(),
+        ShareRequestStatus.DENY);
+    verify(sharedPermissionRepository).save(permission);
+  }
+
+  @Test
+  void shareRequestAction_PendingFailure() {
+    when(serviceUtils.findEntityById(eq(permission.getId()), eq("shareRequest"),
+        eq(sharedPermissionRepository))).thenReturn(permission);
+
+    doThrow(
+        new IllegalArgumentException("Cannot choose PENDING as a share action response")).when(
+            permissionValidator)
+        .validateShareRequestAction(permission, owner.getId(), ShareRequestStatus.PENDING);
+
+    IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+      sharedPermissionService.shareRequestAction(owner.getId(), permission.getId(),
+          ShareRequestStatus.PENDING);
+    });
+
+    // assertions and verify
+    assertEquals("Cannot choose PENDING as a share action response", exception.getMessage());
+    verify(permissionValidator).validateShareRequestAction(permission, owner.getId(),
+        ShareRequestStatus.PENDING);
     verify(sharedPermissionRepository, never()).save(any());
   }
 
   @Test
-  void createSharingRequest_OwnerNotFound() {
-    // set up owner doesn't exist
-    when(userRepository.findById("owner123")).thenReturn(Optional.empty());
-
-    assertThrows(ResponseStatusException.class,
-        () -> sharedPermissionService.createSharingRequest("requester456", "owner123", 0));
-  }
-
-  @Test
-  void createSharingRequest_RequesterNotFound() {
-
-    when(userRepository.findById("owner123")).thenReturn(Optional.of(owner));
-    when(userRepository.findById("requester456")).thenReturn(Optional.empty());
-
-    assertThrows(ResponseStatusException.class,
-        () -> sharedPermissionService.createSharingRequest("requester456", "owner123", 0));
-  }
-
-  @Test
-  void createSharingRequest_SelfPermission() {
-    String userId = "user123";
-
-    when(userRepository.findById("requester456")).thenReturn(Optional.of(requester));
-
-    assertThrows(IllegalArgumentException.class,
-        () -> sharedPermissionService.createSharingRequest("requester456", "requester456", 0));
-  }
-
-  @Test
-  void createSharingRequest_InvalidPermissionType() {
-    // permission can only be 0 or 1
-
-    when(userRepository.findById("owner123")).thenReturn(Optional.of(owner));
-
-    assertThrows(IllegalArgumentException.class,
-        () -> sharedPermissionService.createSharingRequest("requester456", "owner123", 2));
-  }
-
-  @Test
-  void acceptSharingRequest_Success() {
-
-    permission.setStatus(0); // pending
-    when(sharedPermissionRepository.findById("permission789")).thenReturn(Optional.of(permission));
-    when(sharedPermissionRepository.save(any())).thenReturn(permission);
-
-    SharedPermission
-        result =
-        sharedPermissionService.acceptDenySharingRequest("owner123", "permission789", 1);
-
-    assertNotNull(result);
-    assertEquals(1, result.getStatus()); // accepted
-    verify(sharedPermissionRepository).save(permission);
-  }
-
-  @Test
-  void denySharingRequest_Success() {
-
-    permission.setStatus(0); // pending
-    when(sharedPermissionRepository.findById("permission789")).thenReturn(Optional.of(permission));
-    when(sharedPermissionRepository.save(any())).thenReturn(permission);
-
-    SharedPermission
-        result =
-        sharedPermissionService.acceptDenySharingRequest("owner123", "permission789", 2);
-
-    assertNotNull(result);
-    assertEquals(2, result.getStatus()); // accepted
-    verify(sharedPermissionRepository).save(permission);
-  }
-
-  @Test
-  void acceptDenySharingRequest_NotFound() {
-    // request with permission id doesn't exist
-    when(sharedPermissionRepository.findById("permission789")).thenReturn(Optional.empty());
-
-    assertThrows(ResponseStatusException.class,
-        () -> sharedPermissionService.acceptDenySharingRequest("owner123", "permission789", 1));
-  }
-
-  @Test
-  void acceptDenySharingRequest_NotAuthorized() {
-
-    // in before each permission's owner is set
-    when(sharedPermissionRepository.findById("permission789")).thenReturn(Optional.of(permission));
-
-    assertThrows(ResponseStatusException.class,
-        () -> sharedPermissionService.acceptDenySharingRequest("wrongOwner", "permission789", 1));
-  }
-
-  @Test
-  void acceptDenySharingRequest_NotPending() {
-
-    // already accepted
-    permission.setStatus(1);
-    when(sharedPermissionRepository.findById("permission789")).thenReturn(Optional.of(permission));
-
-    assertThrows(IllegalArgumentException.class,
-        () -> sharedPermissionService.acceptDenySharingRequest("owner123", "permission789", 1));
-  }
-
-  @Test
-  void acceptDenySharingRequest_InvalidAcceptValue() {
-
-    when(sharedPermissionRepository.findById("permission789")).thenReturn(Optional.of(permission));
-
-    // accept or deny 1 or 2
-    assertThrows(IllegalArgumentException.class,
-        () -> sharedPermissionService.acceptDenySharingRequest("owner123", "permission789", 3));
-  }
-
-  @Test
   void revokeSharingPermission_Success() {
+    permission.setStatus(ShareRequestStatus.ACCEPT);
+    when(serviceUtils.findEntityById(eq(permission.getId()), eq("shareRequest"),
+        eq(sharedPermissionRepository))).thenReturn(permission);
 
-    // first set accepted
-    permission.setStatus(1);
-    when(sharedPermissionRepository.findById("permission789")).thenReturn(Optional.of(permission));
+    doNothing().when(permissionValidator)
+        .validateRevokeSharePermission(permission, owner.getId());
 
-    sharedPermissionService.revokeSharingPermission("owner123", "permission789");
+    sharedPermissionService.revokeSharingPermission(owner.getId(), permission.getId());
 
-    // verify delete happens exactly once
+    verify(permissionValidator).validateRevokeSharePermission(permission, owner.getId());
     verify(sharedPermissionRepository).delete(permission);
   }
 
   @Test
-  void revokeSharingPermission_NotFound() {
-    // permission id not found
-    when(sharedPermissionRepository.findById("permission789")).thenReturn(Optional.empty());
+  void revokeSharingPermission_Failure_InvalidOwner() {
+    when(serviceUtils.findEntityById(eq(permission.getId()), eq("shareRequest"),
+        eq(sharedPermissionRepository))).thenReturn(permission);
 
-    assertThrows(ResponseStatusException.class,
-        () -> sharedPermissionService.revokeSharingPermission("owner123", "permission789"));
+    doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN,
+        "Not authorized to act on this request")).when(permissionValidator)
+        .validateRevokeSharePermission(eq(permission), eq(nonExistentUserId));
+
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
+      sharedPermissionService.revokeSharingPermission(nonExistentUserId, permission.getId());
+    });
+
+    assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
+    assertEquals("Not authorized to act on this request", exception.getReason());
   }
 
   @Test
-  void revokeSharingPermission_NotAuthorized() {
+  void revokeSharingPermission_Failure_InvalidRevokeRequest() {
+    when(serviceUtils.findEntityById(eq(permission.getId()), eq("shareRequest"),
+        eq(sharedPermissionRepository))).thenReturn(permission);
 
-    // owner set in before each
-    permission.setStatus(1);
-    when(sharedPermissionRepository.findById("permission789")).thenReturn(Optional.of(permission));
+    // throw exception when attempting to revoke PENDING share request
+    doThrow(
+        new IllegalArgumentException("Can only revoke already accepted shared permissions")).when(
+        permissionValidator).validateRevokeSharePermission(permission, owner.getId());
 
-    assertThrows(ResponseStatusException.class,
-        () -> sharedPermissionService.revokeSharingPermission("wrongOwner", "permission789"));
-  }
+    IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+      sharedPermissionService.revokeSharingPermission(owner.getId(), permission.getId());
+    });
 
-  @Test
-  void revokeSharingPermission_NotAccepted() {
-
-    permission.setStatus(0); // pending
-    when(sharedPermissionRepository.findById("permission789")).thenReturn(Optional.of(permission));
-
-    // can't call revoke on a yet to be accepted request
-    assertThrows(IllegalArgumentException.class,
-        () -> sharedPermissionService.revokeSharingPermission("owner123", "permission789"));
-  }
-
-
-  @Test
-  void hasPermission_SameUser_Success() {
-    String sameUserId = "user123";
-
-    boolean result = sharedPermissionService.hasPermission(sameUserId, sameUserId, 0);
-    assertTrue(result);
-  }
-
-  @Test
-  void hasPermission_InvalidPermissionType() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> sharedPermissionService.hasPermission("requester456", "owner123", 3),
-        "Permission Type should be view or edit");
-  }
-
-  @Test
-  void hasPermission_RequesterNotFound() {
-    when(userRepository.findById("requester456")).thenReturn(Optional.empty());
-
-    ResponseStatusException exception =
-        assertThrows(
-            ResponseStatusException.class,
-            () -> sharedPermissionService.hasPermission("requester456", "owner123", VIEW));
-
-    assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
-    assertEquals("Requester User Not found", exception.getReason());
-  }
-
-  @Test
-  void hasPermission_FirstResponderViewAccess_Success() {
-    User firstResponder = new User();
-    firstResponder.setId("responder789");
-    firstResponder.setUserType(FIRST_RESPONDER);
-
-    when(userRepository.findById("responder789")).thenReturn(Optional.of(firstResponder));
-
-    boolean result = sharedPermissionService.hasPermission("responder789", "owner123", VIEW);
-
-    assertTrue(result);
-  }
-
-  @Test
-  void hasPermission_FirstResponderEditAccess_RequiresPermission() {
-    User firstResponder = new User();
-    firstResponder.setId("responder789");
-    firstResponder.setUserType(FIRST_RESPONDER);
-
-    User owner = new User();
-    owner.setId("owner123");
-
-    when(userRepository.findById("responder789")).thenReturn(Optional.of(firstResponder));
-    when(userRepository.findById("owner123")).thenReturn(Optional.of(owner));
-    when(sharedPermissionRepository.findByOwnerAndRequesterAndPermissionTypeAndStatus(
-        any(), any(), eq(EDIT), eq(ACCEPT)))
-        .thenReturn(Optional.empty());
-
-    boolean result = sharedPermissionService.hasPermission("responder789", "owner123", EDIT);
-
-    assertFalse(result);
-  }
-
-  @Test
-  void hasPermission_OwnerNotFound() {
-    User requester = new User();
-    requester.setId("requester456");
-    requester.setUserType(REGULAR_USER);
-
-    when(userRepository.findById("requester456")).thenReturn(Optional.of(requester));
-    when(userRepository.findById("owner123")).thenReturn(Optional.empty());
-
-    ResponseStatusException exception =
-        assertThrows(
-            ResponseStatusException.class,
-            () -> sharedPermissionService.hasPermission("requester456", "owner123", VIEW));
-
-    assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
-    assertEquals("Owner User Not found", exception.getReason());
-  }
-
-  @Test
-  void hasPermission_WithValidPermission_Success() {
-    User requester = new User();
-    requester.setId("requester456");
-    requester.setUserType(REGULAR_USER);
-
-    User owner = new User();
-    owner.setId("owner123");
-
-    SharedPermission permission = new SharedPermission();
-    permission.setRequester(requester);
-    permission.setOwner(owner);
-    permission.setPermissionType(VIEW);
-    permission.setStatus(ACCEPT);
-
-    when(userRepository.findById("requester456")).thenReturn(Optional.of(requester));
-    when(userRepository.findById("owner123")).thenReturn(Optional.of(owner));
-    when(sharedPermissionRepository.findByOwnerAndRequesterAndPermissionTypeAndStatus(
-        requester, owner, VIEW, ACCEPT))
-        .thenReturn(Optional.of(permission));
-
-    boolean result = sharedPermissionService.hasPermission("requester456", "owner123", VIEW);
-
-    assertTrue(result);
-  }
-
-  @Test
-  void hasPermission_WithoutValidPermission_Failure() {
-    User requester = new User();
-    requester.setId("requester456");
-    requester.setUserType(REGULAR_USER);
-
-    User owner = new User();
-    owner.setId("owner123");
-
-    when(userRepository.findById("requester456")).thenReturn(Optional.of(requester));
-    when(userRepository.findById("owner123")).thenReturn(Optional.of(owner));
-    when(sharedPermissionRepository.findByOwnerAndRequesterAndPermissionTypeAndStatus(
-        requester, owner, VIEW, ACCEPT))
-        .thenReturn(Optional.empty());
-
-    boolean result = sharedPermissionService.hasPermission("requester456", "owner123", VIEW);
-
-    assertFalse(result);
+    // assertions and verify
+    assertEquals("Can only revoke already accepted shared permissions", exception.getMessage());
+    verify(permissionValidator).validateRevokeSharePermission(permission, owner.getId());
+    verify(sharedPermissionRepository, never()).delete(any());
   }
 }

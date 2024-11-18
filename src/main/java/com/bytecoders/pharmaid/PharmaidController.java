@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * This class contains all the API routes for the system.
@@ -37,9 +38,6 @@ public class PharmaidController {
 
   @Autowired
   private PrescriptionService prescriptionService;
-
-  private static final String USER_NOT_FOUND_MESSAGE = "Provided userId does not exist";
-  private static final String MEDICATION_NOT_FOUND_MESSAGE = "Provided medicationId does not exist";
 
   /**
    * Basic hello endpoint for testing.
@@ -96,8 +94,8 @@ public class PharmaidController {
   /**
    * Get all available medications endpoint.
    *
-   * @return a ResponseEntity with a list of medications if the operation is successful, or an error
-   *     message if an error occurred
+   * @return a ResponseEntity with a list of medications if the operation is successful, or an
+   *     error message if an error occurred
    */
   @GetMapping(path = "/medications")
   public ResponseEntity<?> getAllMedications() {
@@ -123,23 +121,12 @@ public class PharmaidController {
   public ResponseEntity<?> addPrescription(@PathVariable("userId") String userId,
       @RequestBody @Valid CreatePrescriptionRequest request) {
     try {
-      final Optional<User> userOptional = userService.getUser(userId);
-
-      if (userOptional.isEmpty()) {
-        return new ResponseEntity<>(USER_NOT_FOUND_MESSAGE, HttpStatus.NOT_FOUND);
-      }
-
-      final Optional<Medication>
-          medOptional =
-          medicationService.getMedication(request.getMedicationId());
-
-      if (medOptional.isEmpty()) {
-        return new ResponseEntity<>(MEDICATION_NOT_FOUND_MESSAGE, HttpStatus.NOT_FOUND);
-      }
+      final User user = userService.getUser(userId);
+      final Medication medication = medicationService.getMedication(request.getMedicationId());
 
       final Prescription prescription = new Prescription();
-      prescription.setUser(userOptional.get());
-      prescription.setMedication(medOptional.get());
+      prescription.setUser(user);
+      prescription.setMedication(medication);
       prescription.setDosage(request.getDosage());
       prescription.setNumOfDoses(request.getNumOfDoses());
       prescription.setStartDate(request.getStartDate());
@@ -148,6 +135,8 @@ public class PharmaidController {
 
       return new ResponseEntity<>(prescriptionService.createPrescription(prescription),
           HttpStatus.CREATED);
+    } catch (ResponseStatusException e) {
+      throw e; // propagates to globalExceptionHandler
     } catch (Exception e) {
       return new ResponseEntity<>("Unexpected error encountered while creating a prescription",
           HttpStatus.INTERNAL_SERVER_ERROR);
@@ -158,26 +147,24 @@ public class PharmaidController {
    * Endpoint to get user's prescriptions.
    *
    * @param userId user whose prescriptions we're trying to retrieve
-   * @return a ResponseEntity with user's prescriptions if the operation is successful, or an error
-   *     message if an error occurred
+   * @return a ResponseEntity with user's prescriptions if the operation is successful, or an
+   *     error message if an error occurred
    */
   @GetMapping(path = "/users/{userId}/prescriptions")
   public ResponseEntity<?> getPrescriptionsForUser(@PathVariable("userId") String userId) {
     try {
-      final Optional<User> userOptional = userService.getUser(userId);
-
-      if (userOptional.isEmpty()) {
-        return new ResponseEntity<>(USER_NOT_FOUND_MESSAGE, HttpStatus.NOT_FOUND);
-      }
+      // check if user exists
+      userService.getUser(userId);
 
       return new ResponseEntity<>(prescriptionService.getPrescriptionsForUser(userId),
           HttpStatus.OK);
+    } catch (ResponseStatusException e) {
+      throw e; // propagates to globalExceptionHandler
     } catch (Exception e) {
       return new ResponseEntity<>("Unexpected error encountered while getting user prescriptions",
           HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
-
 
 
 }
