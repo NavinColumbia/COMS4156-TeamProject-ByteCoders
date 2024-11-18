@@ -42,7 +42,7 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(IllegalArgumentException.class)
   public ResponseEntity<Map<String, String>> handleIllegalArgumentException(
       IllegalArgumentException ex) {
-    System.out.println("Caught IllegalArgumentException: " + ex.getMessage());
+    log.error("Caught IllegalArgumentException: {}", ex.getMessage());
     return new ResponseEntity<>(Map.of("error", "Invalid input", "details", ex.getMessage()),
         HttpStatus.BAD_REQUEST);
   }
