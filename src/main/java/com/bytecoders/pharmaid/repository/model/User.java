@@ -1,9 +1,12 @@
 package com.bytecoders.pharmaid.repository.model;
 
+import com.bytecoders.pharmaid.openapi.model.UserType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Data;
@@ -16,9 +19,11 @@ import org.hibernate.annotations.UuidGenerator;
 @Entity
 @Table(name = "users")
 public class User {
+
   @Id
   @UuidGenerator
   @JsonProperty
+  @Column(name = "user_id", columnDefinition = "UUID")
   private String id;
 
   @Column(name = "email", nullable = false, unique = true)
@@ -29,6 +34,7 @@ public class User {
   @JsonIgnore
   private String hashedPassword;
 
+  @Enumerated(EnumType.STRING)
   @Column(name = "user_type", nullable = false)
-  private Integer userType = 0;
+  private UserType userType;
 }

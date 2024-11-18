@@ -2,8 +2,8 @@ package com.bytecoders.pharmaid.service;
 
 import com.bytecoders.pharmaid.repository.MedicationRepository;
 import com.bytecoders.pharmaid.repository.model.Medication;
+import com.bytecoders.pharmaid.util.ServiceUtils;
 import java.util.List;
-import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,11 +16,19 @@ public class MedicationService {
   @Autowired
   private MedicationRepository medicationRepository;
 
+  @Autowired
+  private ServiceUtils serviceUtils;
+
   public List<Medication> getAllMedications() {
     return medicationRepository.findAll();
   }
 
-  public Optional<Medication> getMedication(String medicationId) {
-    return medicationRepository.findByMedicationId(medicationId);
+  /**
+   * Returns a Medication or throws a ResponseStatusException.
+   *
+   * @param medicationId ID pertaining to the prescription
+   */
+  public Medication getMedication(String medicationId) {
+    return serviceUtils.findEntityById(medicationId, "medication", medicationRepository);
   }
 }

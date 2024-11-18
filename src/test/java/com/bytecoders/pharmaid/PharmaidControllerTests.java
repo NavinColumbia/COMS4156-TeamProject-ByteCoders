@@ -1,13 +1,16 @@
 package com.bytecoders.pharmaid;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 import com.bytecoders.pharmaid.openapi.model.CreatePrescriptionRequest;
 import com.bytecoders.pharmaid.openapi.model.LoginUserRequest;
 import com.bytecoders.pharmaid.openapi.model.LoginUserResponse;
 import com.bytecoders.pharmaid.openapi.model.RegisterUserRequest;
+import com.bytecoders.pharmaid.openapi.model.UserType;
 import com.bytecoders.pharmaid.repository.model.Medication;
 import com.bytecoders.pharmaid.repository.model.Prescription;
 import com.bytecoders.pharmaid.repository.model.User;
@@ -26,22 +29,25 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * This class represents a set of unit tests for {@code PharmaidController} class.
  */
 @WebMvcTest(PharmaidController.class)
-public class PharmaidContollerTests {
+public class PharmaidControllerTests {
 
   @Test
   public void registerSuccessTest() {
     final RegisterUserRequest request = new RegisterUserRequest();
     request.setEmail("ol2260@columbia.edu");
     request.setPassword("password");
+    request.setUserType(UserType.PATIENT);
 
     final User mockUser = new User();
     mockUser.setId("someid");
     mockUser.setEmail("ol2260@columbia.edu");
+    mockUser.setUserType(UserType.PATIENT);
 
     when(userService.registerUser(request)).thenReturn(mockUser);
 
@@ -55,6 +61,7 @@ public class PharmaidContollerTests {
     final RegisterUserRequest request = new RegisterUserRequest();
     request.setEmail("ol2260@columbia.edu");
     request.setPassword("password");
+    request.setUserType(UserType.PATIENT);
 
     when(userService.registerUser(request)).thenThrow(DataIntegrityViolationException.class);
 
@@ -68,6 +75,7 @@ public class PharmaidContollerTests {
     final RegisterUserRequest request = new RegisterUserRequest();
     request.setEmail("ol2260@columbia.edu");
     request.setPassword("password");
+    request.setUserType(UserType.PATIENT);
 
     when(userService.registerUser(request)).thenThrow(RuntimeException.class);
 
@@ -119,9 +127,9 @@ public class PharmaidContollerTests {
   @Test
   void testGetAllMedications() {
     Medication med1 = new Medication();
-    med1.setMedicationId("med1");
+    med1.setId("med1");
     Medication med2 = new Medication();
-    med2.setMedicationId("med2");
+    med2.setId("med2");
 
     when(medicationService.getAllMedications()).thenReturn(Arrays.asList(med1, med2));
 
@@ -149,13 +157,13 @@ public class PharmaidContollerTests {
     mockUser.setId(userId);
 
     Medication mockMed = new Medication();
-    mockMed.setMedicationId("medId");
+    mockMed.setId("medId");
 
     Prescription mockPrescription = new Prescription();
-    mockPrescription.setPrescriptionId("prescriptionId");
+    mockPrescription.setId("prescriptionId");
 
-    when(userService.getUser(userId)).thenReturn(Optional.of(mockUser));
-    when(medicationService.getMedication("medId")).thenReturn(Optional.of(mockMed));
+    when(userService.getUser(userId)).thenReturn(mockUser);
+    when(medicationService.getMedication("medId")).thenReturn(mockMed);
     when(prescriptionService.createPrescription(any(Prescription.class))).thenReturn(
         mockPrescription);
 
@@ -172,11 +180,44 @@ public class PharmaidContollerTests {
     String userId = "nonExistentUserId";
     CreatePrescriptionRequest request = new CreatePrescriptionRequest();
 
-    when(userService.getUser(userId)).thenReturn(Optional.empty());
+    when(userService.getUser(userId)).thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND,
+        String.format("Provided userId does not exist: %s", userId)));
 
-    ResponseEntity<?> response = testController.addPrescription(userId, request);
-    assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-    assertEquals("Provided userId does not exist", response.getBody());
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
+      testController.addPrescription(userId, request);
+    });
+
+    assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+    assertEquals(String.format("Provided userId does not exist: %s", userId),
+        exception.getReason());
+  }
+
+  @Test
+  void testAddPrescriptionUserWithoutPermission() {
+    CreatePrescriptionRequest request = new CreatePrescriptionRequest();
+    request.setMedicationId("medId");
+    request.setDosage(1);
+    request.setNumOfDoses(2);
+    request.setStartDate(new Date());
+    request.setEndDate(new Date());
+    request.setIsActive(true);
+
+    User mockUser = new User();
+    String userId = "userId";
+    mockUser.setId(userId);
+
+    doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN,
+        String.format("User %s is not authorized to add prescriptions for user: %s",
+            jwtUtils.getLoggedInUserId(), userId))).when(prescriptionService)
+        .createPrescription(any(Prescription.class));
+
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
+      testController.addPrescription(userId, request);
+    });
+
+    assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
+    assertEquals(String.format("User %s is not authorized to add prescriptions for user: %s",
+        jwtUtils.getLoggedInUserId(), userId), exception.getReason());
   }
 
   /**
@@ -189,18 +230,35 @@ public class PharmaidContollerTests {
     mockUser.setId(userId);
 
     Prescription prescription1 = new Prescription();
-    prescription1.setPrescriptionId("prescription1");
+    prescription1.setId("prescription1");
     Prescription prescription2 = new Prescription();
-    prescription2.setPrescriptionId("prescription2");
+    prescription2.setId("prescription2");
 
-    when(userService.getUser(userId)).thenReturn(Optional.of(mockUser));
+    when(userService.getUser(userId)).thenReturn(mockUser);
     when(prescriptionService.getPrescriptionsForUser(userId)).thenReturn(
-        Arrays.asList(prescription1,
-            prescription2));
+        Arrays.asList(prescription1, prescription2));
 
     ResponseEntity<?> response = testController.getPrescriptionsForUser(userId);
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertEquals(Arrays.asList(prescription1, prescription2), response.getBody());
+  }
+
+  @Test
+  void testGetPrescriptionsUserWithoutPermission() {
+    String userId = "userId";
+
+    doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN,
+        String.format("User %s is not authorized to view prescriptions of user: %s",
+            jwtUtils.getLoggedInUserId(), userId))).when(prescriptionService)
+        .getPrescriptionsForUser(userId);
+
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
+      testController.getPrescriptionsForUser(userId);
+    });
+
+    assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
+    assertEquals(String.format("User %s is not authorized to view prescriptions of user: %s",
+        jwtUtils.getLoggedInUserId(), userId), exception.getReason());
   }
 
   /**
@@ -210,11 +268,16 @@ public class PharmaidContollerTests {
   void testGetPrescriptionsForNonExistentUser() {
     String userId = "nonExistentUserId";
 
-    when(userService.getUser(userId)).thenReturn(Optional.empty());
+    when(userService.getUser(userId)).thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND,
+        String.format("Provided userId does not exist: %s", userId)));
 
-    ResponseEntity<?> response = testController.getPrescriptionsForUser(userId);
-    assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-    assertEquals("Provided userId does not exist", response.getBody());
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
+      testController.getPrescriptionsForUser(userId);
+    });
+
+    assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+    assertEquals(String.format("Provided userId does not exist: %s", userId),
+        exception.getReason());
   }
 
   @MockBean
@@ -230,7 +293,7 @@ public class PharmaidContollerTests {
   private PrescriptionService prescriptionService;
 
   @MockBean
-  private JwtUtils jwtUtil;
+  private JwtUtils jwtUtils;
 
   @Autowired
   private ObjectMapper objectMapper;

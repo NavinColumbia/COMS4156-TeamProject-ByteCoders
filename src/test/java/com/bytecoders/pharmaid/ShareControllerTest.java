@@ -1,16 +1,15 @@
 package com.bytecoders.pharmaid;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
-import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.Mockito.when;
 
+import com.bytecoders.pharmaid.openapi.model.SharePermissionType;
 import com.bytecoders.pharmaid.openapi.model.ShareRequest;
+import com.bytecoders.pharmaid.openapi.model.ShareRequestStatus;
+import com.bytecoders.pharmaid.openapi.model.UserType;
 import com.bytecoders.pharmaid.repository.model.SharedPermission;
 import com.bytecoders.pharmaid.repository.model.User;
 import com.bytecoders.pharmaid.service.SharedPermissionService;
@@ -18,180 +17,144 @@ import com.bytecoders.pharmaid.util.JwtUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Accept, Deny, Request, Revoke endpoint Tests. Mocks JwtUtil and SharePermission.
  */
-@SpringBootTest
-@AutoConfigureMockMvc
+@WebMvcTest(ShareController.class)
 class ShareControllerTest {
 
-  @Autowired
-  private WebApplicationContext context;
-
-  private MockMvc mockMvc;
+  @MockBean
+  private JwtUtils jwtUtils;
 
   @MockBean
   private SharedPermissionService sharedPermissionService;
 
   @Autowired
+  private ShareController shareController;
+
+  @Autowired
   private ObjectMapper objectMapper;
 
-  private static final String REQUESTER_ID = "testUser123";
-  private static final String OWNER_ID = "ownerUser456";
-  private static final String SHARE_REQUEST_ID = "requestId789";
-
-  private User testRequester;
-  private User testOwner;
-  private SharedPermission testPermission;
+  private User owner;
+  private User requester;
+  private SharedPermission permission;
+  private ShareRequest request;
 
   @BeforeEach
   void setUp() {
-    mockMvc = MockMvcBuilders
-        .webAppContextSetup(context)
-        .apply(springSecurity())
-        .build();
+    // owner user of the health records
+    owner = new User();
+    owner.setId("owner123");
 
-    testRequester = new User();
-    testRequester.setId(REQUESTER_ID);
-    testRequester.setUserType(1);
+    // user making a request to interact with another user's health records
+    requester = new User();
+    requester.setId("requester456");
+    requester.setUserType(UserType.HEALTHCARE_PROVIDER);
 
-    testOwner = new User();
-    testOwner.setId(OWNER_ID);
-    testOwner.setUserType(1);
+    // create a share permission
+    permission = new SharedPermission();
+    permission.setId("permission789");
+    permission.setOwner(owner);
+    permission.setRequester(requester);
+    permission.setSharePermissionType(SharePermissionType.EDIT);
+    permission.setStatus(ShareRequestStatus.PENDING);
 
-    testPermission = new SharedPermission();
-    testPermission.setId(SHARE_REQUEST_ID);
-    testPermission.setOwner(testOwner);
-    testPermission.setRequester(testRequester);
-    testPermission.setPermissionType(1);
+    // create a share request
+    request = new ShareRequest();
+    request.setSharePermissionType(SharePermissionType.EDIT);
   }
 
   @Test
-  @WithMockUser
-  void requestAccess_Success() throws Exception {
-    ShareRequest shareRequest = new ShareRequest();
-    shareRequest.setPermissionType(1); //edit
-    testPermission.setStatus(0); //pending
+  void requestAccess_Success() {
+    // Mock log in and createSharingRequest()
+    when(jwtUtils.getLoggedInUserId()).thenReturn(requester.getId());
+    when(sharedPermissionService.createSharingRequest(requester.getId(), owner.getId(),
+        SharePermissionType.EDIT)).thenReturn(permission);
 
-    try (MockedStatic<JwtUtils> jwtUtils = Mockito.mockStatic(JwtUtils.class)) {
-      //mock it to return the id of the requester
-      jwtUtils.when(JwtUtils::getLoggedInUserId).thenReturn(REQUESTER_ID);
-      //mock the service to return the Share Permission Object
-      Mockito.when(sharedPermissionService.createSharingRequest(
-              anyString(), anyString(), any(Integer.class)))
-          .thenReturn(testPermission);
+    // Generate requestAccess() request
+    ResponseEntity<?> response = shareController.requestAccess(owner.getId(), request);
 
-
-      mockMvc.perform(post("/share/request/" + OWNER_ID)
-              .with(SecurityMockMvcRequestPostProcessors.csrf())
-              .contentType(MediaType.APPLICATION_JSON)
-              .content(objectMapper.writeValueAsString(shareRequest)))
-          .andExpect(status().isCreated())
-          .andExpect(jsonPath("$.id").value(SHARE_REQUEST_ID))
-          .andExpect(jsonPath("$.owner.id").value(OWNER_ID))
-          .andExpect(jsonPath("$.requester.id").value(REQUESTER_ID));
-    }
+    // Assertions
+    assertEquals(response.getStatusCode(), HttpStatus.CREATED);
+    SharedPermission responseBody = (SharedPermission) response.getBody();
+    assertEquals(permission, responseBody);
   }
 
   @Test
-  @WithMockUser
-  void acceptRequest_Success() throws Exception {
-    testPermission.setStatus(1);
+  void acceptRequest_Success() {
+    // Mock login and shareRequestAction()
+    when(jwtUtils.getLoggedInUserId()).thenReturn(owner.getId());
+    when(sharedPermissionService.shareRequestAction(owner.getId(), permission.getId(),
+        ShareRequestStatus.ACCEPT)).thenReturn(permission);
 
-    try (MockedStatic<JwtUtils> jwtUtils = Mockito.mockStatic(JwtUtils.class)) {
-      jwtUtils.when(JwtUtils::getLoggedInUserId).thenReturn(REQUESTER_ID);
-      Mockito.when(sharedPermissionService.acceptDenySharingRequest(
-              anyString(), anyString(), eq(1)))
-          .thenReturn(testPermission);
+    // Generate acceptShareRequest() request
+    ResponseEntity<?> response =
+        shareController.acceptShareRequest(owner.getId(), permission.getId());
 
-      mockMvc.perform(post("/share/" + SHARE_REQUEST_ID + "/accept")
-              .with(SecurityMockMvcRequestPostProcessors.csrf()))
-          .andExpect(status().isOk())
-          .andExpect(jsonPath("$.status").value(1));
-    }
+    // Assertions
+    assertEquals(response.getStatusCode(), HttpStatus.OK);
+    SharedPermission responseBody = (SharedPermission) response.getBody();
+    assertEquals(permission, responseBody);
   }
 
   @Test
-  @WithMockUser
-  void denyRequest_Success() throws Exception {
-    testPermission.setStatus(2);
+  void denyRequest_Success() {
+    // Mock login and shareRequestAction()
+    when(jwtUtils.getLoggedInUserId()).thenReturn(owner.getId());
+    when(sharedPermissionService.shareRequestAction(owner.getId(), permission.getId(),
+        ShareRequestStatus.DENY)).thenReturn(permission);
 
-    try (MockedStatic<JwtUtils> jwtUtils = Mockito.mockStatic(JwtUtils.class)) {
-      jwtUtils.when(JwtUtils::getLoggedInUserId).thenReturn(REQUESTER_ID);
-      Mockito.when(sharedPermissionService.acceptDenySharingRequest(
-              anyString(), anyString(), eq(2)))
-          .thenReturn(testPermission);
+    // Generate denyShareRequest() request
+    ResponseEntity<?> response =
+        shareController.denyShareRequest(owner.getId(), permission.getId());
 
-      mockMvc.perform(post("/share/" + SHARE_REQUEST_ID + "/deny")
-              .with(SecurityMockMvcRequestPostProcessors.csrf()))
-          .andExpect(status().isOk())
-          .andExpect(jsonPath("$.status").value(2));
-    }
+    // Assertions
+    assertEquals(response.getStatusCode(), HttpStatus.OK);
+    SharedPermission responseBody = (SharedPermission) response.getBody();
+    assertEquals(permission, responseBody);
   }
 
+
   @Test
-  @WithMockUser
-  void revokeAccess_Success() throws Exception {
-    try (MockedStatic<JwtUtils> jwtUtils = Mockito.mockStatic(JwtUtils.class)) {
-      jwtUtils.when(JwtUtils::getLoggedInUserId).thenReturn(REQUESTER_ID);
+  void revokeAccess_Success() {
+    // Mock login and shareRequestAction()
+    when(jwtUtils.getLoggedInUserId()).thenReturn(owner.getId());
+    doNothing().when(sharedPermissionService)
+        .revokeSharingPermission(owner.getId(), permission.getId());
 
-      doNothing()
-          .when(sharedPermissionService)
-          .revokeSharingPermission(anyString(), anyString());
+    // Generate denyShareRequest() request
+    ResponseEntity<?> response =
+        shareController.revokeShareAccess(owner.getId(), permission.getId());
 
-      mockMvc.perform(post("/share/" + SHARE_REQUEST_ID + "/revoke")
-              .with(SecurityMockMvcRequestPostProcessors.csrf()))
-          .andExpect(status().isOk())
-          .andExpect(jsonPath("$").value("Access revoked successfully"));
-    }
+    // Assertions
+    assertEquals(response.getStatusCode(), HttpStatus.OK);
+    assertEquals(response.getBody(), "Access revoked successfully");
   }
 
-  @Test
-  @WithMockUser
-  void revokeAccess_Unauthorized() throws Exception {
-    try (MockedStatic<JwtUtils> jwtUtils = Mockito.mockStatic(JwtUtils.class)) {
-      jwtUtils.when(JwtUtils::getLoggedInUserId).thenReturn(REQUESTER_ID);
-
-      doThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized access"))
-          .when(sharedPermissionService)
-          .revokeSharingPermission(anyString(), anyString());
-
-      mockMvc.perform(post("/share/" + SHARE_REQUEST_ID + "/revoke")
-              .with(SecurityMockMvcRequestPostProcessors.csrf()))
-          .andExpect(status().isUnauthorized())
-          .andExpect(jsonPath("$").value("Unauthorized access"));
-    }
-  }
 
   @Test
-  @WithMockUser
-  void handleInternalServerError() throws Exception {
-    try (MockedStatic<JwtUtils> jwtUtils = Mockito.mockStatic(JwtUtils.class)) {
-      jwtUtils.when(JwtUtils::getLoggedInUserId).thenReturn(REQUESTER_ID);
+  void revokeAccess_Unauthorized() {
+    final String unauthorizedMessage = "Not authorized to revoke this request";
 
-      doThrow(new RuntimeException("Unexpected error"))
-          .when(sharedPermissionService)
-          .revokeSharingPermission(anyString(), anyString());
+    // Mock login and revokeSharingPermission() to throw unauthorized access error
+    when(jwtUtils.getLoggedInUserId()).thenReturn(owner.getId());
+    doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, unauthorizedMessage)).when(
+            sharedPermissionService)
+        .revokeSharingPermission(eq(owner.getId()), eq(permission.getId()));
 
-      mockMvc.perform(post("/share/" + SHARE_REQUEST_ID + "/revoke")
-              .with(SecurityMockMvcRequestPostProcessors.csrf()))
-          .andExpect(status().isInternalServerError())
-          .andExpect(jsonPath("$").value("Internal Server Error"));
-    }
+    // Generate revokeShareAccess() request
+    ResponseEntity<?> response =
+        shareController.revokeShareAccess(owner.getId(), permission.getId());
+
+    // Assertions
+    assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+    assertEquals(unauthorizedMessage, response.getBody());
   }
 }

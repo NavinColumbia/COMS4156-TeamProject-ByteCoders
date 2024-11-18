@@ -66,7 +66,7 @@ public class JwtUtils {
   /**
    * Fetches logged-in user.
    */
-  public static String getLoggedInUserId() {
+  public String getLoggedInUserId() {
     org.springframework.security.core.Authentication
         authentication =
         SecurityContextHolder.getContext().getAuthentication();

@@ -20,7 +20,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class JwtRequestFilter extends OncePerRequestFilter {
 
   @Autowired
-  private JwtUtils jwtUtil;
+  private JwtUtils jwtUtils;
 
   /**
    * Filter incoming requests to authenticate users based on JWT token Auth header.
@@ -32,14 +32,14 @@ public class JwtRequestFilter extends OncePerRequestFilter {
    * @throws IOException      if an input/output error occurs during the filter process
    */
   @Override
-  protected void doFilterInternal(HttpServletRequest request,
-      HttpServletResponse response,
-      FilterChain chain) throws ServletException, IOException {
+  protected void doFilterInternal(
+      HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+      throws ServletException, IOException {
 
     final String jwt = extractJwtFromHeader(request);
     final String userId = extractUserIdFromJwt(jwt);
 
-    if (userId != null && isAuthenticationNull() && jwtUtil.isTokenValid(jwt, userId)) {
+    if (userId != null && isAuthenticationNull() && jwtUtils.isTokenValid(jwt, userId)) {
       setUpAuthentication(userId, request);
     }
 
@@ -62,7 +62,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
   private String extractUserIdFromJwt(String jwt) {
     if (jwt != null) {
-      return jwtUtil.extractUserId(jwt);
+      return jwtUtils.extractUserId(jwt);
     }
     return null;
   }
@@ -83,8 +83,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
    * @param request HTTP request to build auth details
    */
   private void setUpAuthentication(String userId, HttpServletRequest request) {
-    UsernamePasswordAuthenticationToken
-        authToken =
+    UsernamePasswordAuthenticationToken authToken =
         new UsernamePasswordAuthenticationToken(userId, null, new java.util.ArrayList<>());
 
     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
