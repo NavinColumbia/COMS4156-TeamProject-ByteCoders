@@ -42,7 +42,7 @@ public class PharmaidController {
   private PrescriptionService prescriptionService;
 
   private static final String USER_ID = "userId";
-  private static final String PRESCRIPTION_ID = "prescriptionID";
+  private static final String PRESCRIPTION_ID = "prescriptionId";
 
   /**
    * Basic hello endpoint for testing.
@@ -81,7 +81,7 @@ public class PharmaidController {
    *     message if the deletion is unsuccessful
    */
   @DeleteMapping(path = "/users/{userId}")
-  public ResponseEntity<?> delete(@PathVariable(USER_ID) String userId) {
+  public ResponseEntity<?> deleteUser(@PathVariable(USER_ID) String userId) {
     try {
       final Optional<User> userOptional = userService.getUser(userId);
 

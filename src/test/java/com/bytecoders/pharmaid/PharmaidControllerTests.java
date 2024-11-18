@@ -123,6 +123,23 @@ public class PharmaidControllerTests {
   }
 
   /**
+   * Test for deleting a user 
+   */
+
+  @Test
+  public void deleteUserSuccess() {
+    User mockUser = new User();
+    String userId = "userId";
+    mockUser.setId(userId);
+
+    when(userService.getUser(userId)).thenReturn(Optional.of(mockUser));
+
+    final ResponseEntity<?> deletedUser = testController.deleteUser(userId);
+    assertEquals(deletedUser.getStatusCode(), HttpStatus.OK);
+    assertEquals(deletedUser.getBody(), "User deleted successfully");
+  }
+
+  /**
    * Test for getting all medications.
    */
   @Test
@@ -253,6 +270,69 @@ public class PharmaidControllerTests {
     assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
     assertEquals(String.format("User %s is not authorized to add prescriptions for user: %s",
         jwtUtils.getLoggedInUserId(), userId), exception.getReason());
+  }
+
+  /**
+   * Test for successfully deleting a valid user's valid prescription 
+   */
+   @Test
+   public void removePrescriptionSuccess() {
+    User mockUser = new User();
+    String userId = "userId";
+    mockUser.setId(userId);
+
+    Prescription mockPrescription = new Prescription();
+    String prescriptionId = "prescriptionId";
+    mockPrescription.setUser(mockUser);
+    mockPrescription.setPrescriptionId(prescriptionId);
+    mockPrescription.setEndDate(new Date());
+    mockPrescription.setIsActive(true);
+
+    when(userService.getUser(userId)).thenReturn(Optional.of(mockUser));
+    when(prescriptionService.getPrescriptionById(prescriptionId)).thenReturn(Optional.of(mockPrescription));
+ 
+    final ResponseEntity<?> deletedPrescription = testController.removePrescription(userId, prescriptionId);
+    assertEquals(deletedPrescription.getStatusCode(), HttpStatus.OK);
+    assertEquals(deletedPrescription.getBody(), "Prescription removed.");
+   }
+
+  /**
+   * Test for failed remove prescription operatione due to invalid prescriptionId 
+   */
+  @Test
+  public void removePrescriptionInvalidPrescription() {
+   User mockUser = new User();
+   String userId = "userId";
+   mockUser.setId(userId);
+
+   when(userService.getUser(userId)).thenReturn(Optional.of(mockUser));
+
+   final ResponseEntity<?> deletedPrescription = testController.removePrescription(userId, "nonexistentPrescriptionID");
+   assertEquals(deletedPrescription.getStatusCode(), HttpStatus.NOT_FOUND);
+   assertEquals(deletedPrescription.getBody(), "Prescription doesn't exist");
+  }
+  
+  /**
+   * Test for failed remove prescription operation due to invalid userId
+   */
+  @Test
+  public void removePrescriptionInvalidUser() {
+  User mockUser = new User();
+   String userId = "userId";
+   mockUser.setId(userId);
+
+   Prescription mockPrescription = new Prescription();
+   String prescriptionId = "prescriptionId";
+   mockPrescription.setUser(mockUser);
+   mockPrescription.setPrescriptionId(prescriptionId);
+   mockPrescription.setEndDate(new Date());
+   mockPrescription.setIsActive(true); 
+
+   when(prescriptionService.getPrescriptionById(prescriptionId)).thenReturn(Optional.of(mockPrescription)); 
+
+   final ResponseEntity<?> deletedPrescription = testController.removePrescription("nonexistentUserId", prescriptionId);
+   assertEquals(deletedPrescription.getStatusCode(), HttpStatus.NOT_FOUND);
+   assertEquals(deletedPrescription.getBody(), "User doesn't exist");
   }
 
   /**
