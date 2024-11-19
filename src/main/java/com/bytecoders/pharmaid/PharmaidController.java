@@ -1,5 +1,9 @@
 package com.bytecoders.pharmaid;
 
+import com.bytecoders.pharmaid.openapi.model.CreatePrescriptionRequest;
+import com.bytecoders.pharmaid.openapi.model.LoginUserRequest;
+import com.bytecoders.pharmaid.openapi.model.LoginUserResponse;
+import com.bytecoders.pharmaid.openapi.model.RegisterUserRequest;
 import com.bytecoders.pharmaid.repository.model.Medication;
 import com.bytecoders.pharmaid.repository.model.Prescription;
 import com.bytecoders.pharmaid.repository.model.User;
@@ -75,7 +79,7 @@ public class PharmaidController {
    */
   @DeleteMapping(path = "/users/{userId}")
   public ResponseEntity<?> delete(@PathVariable("userId") String userId) {
-    try{
+    try {
       final Optional<User> userOptional = userService.getUser(userId);
 
       if (userOptional.isEmpty()) {
@@ -83,14 +87,13 @@ public class PharmaidController {
       }
 
       List<Prescription> userPrescriptions = prescriptionService.getPrescriptionsForUser(userId);
-      for(Prescription p : userPrescriptions){
+      for (Prescription p : userPrescriptions) {
         prescriptionService.deletePrescription(p.getPrescriptionId());
       }
 
       userService.deleteUser(userId);
       return new ResponseEntity<>("User deleted successfully", HttpStatus.OK);
-    }
-    catch (Exception e){
+    } catch (Exception e) {
       return new ResponseEntity<>(
           "Unexpected error encountered during deletion", HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -217,7 +220,6 @@ public class PharmaidController {
             "Unexpected error encountered while creating a prescription",
             HttpStatus.INTERNAL_SERVER_ERROR);
       }
-
   }
 
   /**
@@ -256,28 +258,27 @@ public class PharmaidController {
     @PathVariable("userId") String userId, 
     @PathVariable("prescriptionId") String prescriptionId) {
       try {
-
         final Optional<User> userOptional = userService.getUser(userId);
 
-        if (userOptional.isEmpty()) {
-          return new ResponseEntity<>("Provided User doesn't exist", HttpStatus.NOT_FOUND);
-        }
-
-        final Optional<Prescription> prescriptionOptional =
-          prescriptionService.getPrescriptionById(prescriptionId);
-
-        if (prescriptionOptional.isEmpty()) {
-          return new ResponseEntity<>("Prescription doesn't exist", HttpStatus.NOT_FOUND);
-        }
-
-        prescriptionService.deletePrescription(prescriptionId);
-        return new ResponseEntity<>("Prescription removed.", HttpStatus.OK);
-      } catch (Exception e) {
-        return new ResponseEntity<>(
-            "Unexpected error encountered while removing prescription.",
-            HttpStatus.INTERNAL_SERVER_ERROR);
+      if (userOptional.isEmpty()) {
+        return new ResponseEntity<>("Provided User doesn't exist", HttpStatus.NOT_FOUND);
       }
+
+      final Optional<Prescription> pOptional 
+          = prescriptionService.getPrescriptionById(prescriptionId);
+
+      if (pOptional.isEmpty()) {
+        return new ResponseEntity<>("Prescription doesn't exist", HttpStatus.NOT_FOUND);
+      }
+
+      prescriptionService.deletePrescription(prescriptionId);
+      return new ResponseEntity<>("Prescription removed.", HttpStatus.OK);
+    } catch (Exception e) {
+      return new ResponseEntity<>(
+          "Unexpected error encountered while removing prescription.",
+          HttpStatus.INTERNAL_SERVER_ERROR);
     }
+  }
 
 
 }
