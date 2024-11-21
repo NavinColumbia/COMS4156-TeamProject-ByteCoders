@@ -8,7 +8,6 @@ import com.bytecoders.pharmaid.openapi.model.UserType;
 import com.bytecoders.pharmaid.repository.SharedPermissionRepository;
 import com.bytecoders.pharmaid.repository.model.SharedPermission;
 import com.bytecoders.pharmaid.repository.model.User;
-import com.bytecoders.pharmaid.util.JwtUtils;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +16,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-/** Helper methods to validate all input in SharedPermissionService. */
+/**
+ * Helper methods to validate all input in SharedPermissionService.
+ */
 @Slf4j
 @Service
 public class SharedPermissionValidator {
@@ -28,8 +29,6 @@ public class SharedPermissionValidator {
   @Autowired
   private UserService userService;
 
-  @Autowired
-  private JwtUtils jwtUtils;
 
   /**
    * Checks if current user can EDIT another user's records.
@@ -96,8 +95,7 @@ public class SharedPermissionValidator {
    * Checks if the logged in user has permissions to perform a sharing action.
    *
    * @param loggedInUserId the logged in user
-   * @param userId         the user needing proper permissions for creating or acting on a
-   *                       request
+   * @param userId         the user needing proper permissions for creating or acting on a request
    */
   public void validateLoggedInUser(String loggedInUserId, String userId) {
     if (!loggedInUserId.equals(userId)) {
@@ -219,8 +217,8 @@ public class SharedPermissionValidator {
    * @param permissionType the {@link SharePermissionType} the requester is seeking to obtain
    */
   public void validateCreateShareRequestSetup(
-      User owner, User requester, SharePermissionType permissionType) {
-    validateLoggedInUser(jwtUtils.getLoggedInUserId(), requester.getId());
+      User owner, User requester, SharePermissionType permissionType, String requesterId) {
+    validateLoggedInUser(requesterId, requester.getId());
     validateRequesterUserType(requester.getUserType());
     validateDistinctOwnerAndRequester(owner.getId(), requester.getId());
     validateFirstResponderRequest(requester.getUserType(), permissionType);
@@ -299,8 +297,9 @@ public class SharedPermissionValidator {
    * @throws ResponseStatusException if the status is pending, throw exception
    */
   public void validateShareRequestAction(
-      SharedPermission permission, String actingOwnerId, ShareRequestStatus responseStatus) {
-    validateLoggedInUser(jwtUtils.getLoggedInUserId(), actingOwnerId);
+      SharedPermission permission, String actingOwnerId, ShareRequestStatus responseStatus,
+      String requesterId) {
+    validateLoggedInUser(requesterId, actingOwnerId);
     validateProperOwner(permission.getOwner().getId(), actingOwnerId);
     validateProperRequestStatusAction(permission.getStatus());
     validateRequestStatusResponse(responseStatus);
@@ -314,8 +313,9 @@ public class SharedPermissionValidator {
    * @param actingOwnerId the userId acting on the share request
    * @throws ResponseStatusException if the status is pending, throw exception
    */
-  public void validateRevokeSharePermission(SharedPermission permission, String actingOwnerId) {
-    validateLoggedInUser(jwtUtils.getLoggedInUserId(), actingOwnerId);
+  public void validateRevokeSharePermission(SharedPermission permission, String actingOwnerId,
+      String requesterId) {
+    validateLoggedInUser(requesterId, actingOwnerId);
     validateProperOwner(permission.getOwner().getId(), actingOwnerId);
     validateProperRevokeRequest(permission.getStatus());
   }

@@ -4,7 +4,6 @@ import com.bytecoders.pharmaid.openapi.model.ShareRequest;
 import com.bytecoders.pharmaid.openapi.model.ShareRequestStatus;
 import com.bytecoders.pharmaid.repository.model.SharedPermission;
 import com.bytecoders.pharmaid.service.SharedPermissionService;
-import com.bytecoders.pharmaid.util.JwtUtils;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,11 +12,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 
-/** This class contains all the API routes for Shared Permission. */
+/**
+ * This class contains all the API routes for Shared Permission.
+ */
 @Slf4j
 @RestController
 public class ShareController {
@@ -25,17 +27,18 @@ public class ShareController {
   @Autowired
   private SharedPermissionService sharedPermissionService;
 
-  @Autowired
-  private JwtUtils jwtUtils;
 
-  /** Request access to another user's prescriptions. Permission Type in body. */
+  /**
+   * Request access to another user's prescriptions. Permission Type in body.
+   */
   @PostMapping("/users/{userId}/requests")
   public ResponseEntity<?> requestAccess(
-      @PathVariable String userId, @Valid @RequestBody ShareRequest request) {
+      @PathVariable String userId, @RequestParam String requesterId,
+      @Valid @RequestBody ShareRequest request) {
     try {
-      String loggedInUserId = jwtUtils.getLoggedInUserId();
+
       SharedPermission permission =
-          sharedPermissionService.createSharingRequest(loggedInUserId, userId,
+          sharedPermissionService.createSharingRequest(requesterId, userId,
               request.getSharePermissionType());
 
       return new ResponseEntity<>(permission, HttpStatus.CREATED);
@@ -49,14 +52,17 @@ public class ShareController {
     }
   }
 
-  /** Accept a request. */
+  /**
+   * Accept a request.
+   */
   @PostMapping("/users/{userId}/requests/{shareRequestId}/accept")
   public ResponseEntity<?> acceptShareRequest(
-      @PathVariable String userId, @PathVariable String shareRequestId) {
+      @PathVariable String userId, @PathVariable String shareRequestId,
+      @RequestParam String requesterId) {
     try {
       SharedPermission permission =
           sharedPermissionService.shareRequestAction(userId, shareRequestId,
-              ShareRequestStatus.ACCEPT);
+              ShareRequestStatus.ACCEPT, requesterId);
       return ResponseEntity.ok(permission);
     } catch (IllegalArgumentException e) {
       return ResponseEntity.badRequest().body(e.getMessage());
@@ -68,14 +74,17 @@ public class ShareController {
     }
   }
 
-  /** Denies a Request. */
+  /**
+   * Denies a Request.
+   */
   @PostMapping("/users/{userId}/requests/{shareRequestId}/deny")
   public ResponseEntity<?> denyShareRequest(
-      @PathVariable String userId, @PathVariable String shareRequestId) {
+      @PathVariable String userId, @PathVariable String shareRequestId,
+      @RequestParam String requesterId) {
     try {
       SharedPermission permission =
           sharedPermissionService.shareRequestAction(userId, shareRequestId,
-              ShareRequestStatus.DENY);
+              ShareRequestStatus.DENY, requesterId);
       return ResponseEntity.ok(permission);
     } catch (IllegalArgumentException e) {
       return ResponseEntity.badRequest().body(e.getMessage());
@@ -87,12 +96,15 @@ public class ShareController {
     }
   }
 
-  /** Revoke an accepted prescription. */
+  /**
+   * Revoke an accepted prescription.
+   */
   @PostMapping("/users/{userId}/requests/{shareRequestId}/revoke")
   public ResponseEntity<?> revokeShareAccess(
-      @PathVariable String userId, @PathVariable String shareRequestId) {
+      @PathVariable String userId, @PathVariable String shareRequestId,
+      @RequestParam String requesterId) {
     try {
-      sharedPermissionService.revokeSharingPermission(userId, shareRequestId);
+      sharedPermissionService.revokeSharingPermission(userId, shareRequestId, requesterId);
       return ResponseEntity.ok("Access revoked successfully");
     } catch (IllegalArgumentException e) {
       return ResponseEntity.badRequest().body(e.getMessage());

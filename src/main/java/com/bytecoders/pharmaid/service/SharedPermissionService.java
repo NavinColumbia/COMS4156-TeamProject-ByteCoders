@@ -10,7 +10,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-/** Functionality to create, accept, deny, revoke permission share requests. */
+/**
+ * Functionality to create, accept, deny, revoke permission share requests.
+ */
 @Slf4j
 @Service
 public class SharedPermissionService {
@@ -41,7 +43,8 @@ public class SharedPermissionService {
     User requester = userService.getUser(requesterId);
 
     // ensure valid setup for a share request
-    permissionValidator.validateCreateShareRequestSetup(owner, requester, permissionType);
+    permissionValidator.validateCreateShareRequestSetup(owner, requester, permissionType,
+        requesterId);
 
     // set attributes for permission
     SharedPermission permission = new SharedPermission();
@@ -61,11 +64,11 @@ public class SharedPermissionService {
    * @return SharedPermission object
    */
   public SharedPermission shareRequestAction(
-      String ownerId, String shareRequestId, ShareRequestStatus requestStatus) {
+      String ownerId, String shareRequestId, ShareRequestStatus requestStatus, String requesterId) {
     SharedPermission permission = getPermission(shareRequestId);
 
     // Throw IllegalArgumentException if any property is invalid in the share request action
-    permissionValidator.validateShareRequestAction(permission, ownerId, requestStatus);
+    permissionValidator.validateShareRequestAction(permission, ownerId, requestStatus, requesterId);
 
     // update permission status
     permission.setStatus(requestStatus);
@@ -78,11 +81,11 @@ public class SharedPermissionService {
    * @param ownerId        owner id
    * @param shareRequestId share request id
    */
-  public void revokeSharingPermission(String ownerId, String shareRequestId) {
+  public void revokeSharingPermission(String ownerId, String shareRequestId, String requesterId) {
     SharedPermission permission = getPermission(shareRequestId);
 
     // Throw IllegalArgumentException if any property is invalid when revoking the permission
-    permissionValidator.validateRevokeSharePermission(permission, ownerId);
+    permissionValidator.validateRevokeSharePermission(permission, ownerId, requesterId);
 
     // delete the permission
     sharedPermissionRepository.delete(permission);
