@@ -180,6 +180,45 @@ paths:
                 type: string
                 example: "Unexpected error encountered while getting user prescriptions"
 
+  /users/{userId}/prescriptions/{prescriptionId}:
+    patch:
+      operationId: updateUserPrescription
+      summary: Update an existing prescription for a user
+      description: Returns a JSON response of the prescription updated by a user.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UserId"
+        - name: prescriptionId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/PrescriptionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePrescriptionRequest"
+      responses:
+        "201":
+          description: User prescription created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Prescription"
+        "404":
+          $ref: "#/components/responses/UserDoesNotExist"
+        "500":
+          description: Unexpected error encountered while updating a prescription
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Unexpected error encountered while creating a prescription"
+
   /users/{ownerId}/requests:
     post:
       operationId: requestAccess
@@ -561,6 +600,14 @@ components:
         - numOfDoses
         - startDate
         - isActive
+
+    UpdatePrescriptionRequest:
+      properties:
+        endDate:
+          $ref: "#/components/schemas/PrescriptionEndDate"
+        isActive:
+          $ref: "#/components/schemas/PrescriptionIsActive"
+      type: object
 
     ShareRequest:
       type: object

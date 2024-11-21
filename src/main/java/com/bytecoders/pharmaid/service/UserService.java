@@ -50,7 +50,9 @@ public class UserService {
    * @param userId String of user id
    */
   public void deleteUser(String userId) {
-    userRepository.deleteById(userId);
+    if(getUser(userId) != null) {
+      userRepository.deleteById(userId);
+    }
   }
 
   /**

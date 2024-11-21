@@ -4,6 +4,7 @@ import com.bytecoders.pharmaid.openapi.model.CreatePrescriptionRequest;
 import com.bytecoders.pharmaid.openapi.model.LoginUserRequest;
 import com.bytecoders.pharmaid.openapi.model.LoginUserResponse;
 import com.bytecoders.pharmaid.openapi.model.RegisterUserRequest;
+import com.bytecoders.pharmaid.openapi.model.UpdatePrescriptionRequest;
 import com.bytecoders.pharmaid.repository.model.Medication;
 import com.bytecoders.pharmaid.repository.model.Prescription;
 import com.bytecoders.pharmaid.repository.model.User;
@@ -12,18 +13,13 @@ import com.bytecoders.pharmaid.service.PrescriptionService;
 import com.bytecoders.pharmaid.service.UserService;
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
@@ -83,22 +79,20 @@ public class PharmaidController {
   @DeleteMapping(path = "/users/{userId}")
   public ResponseEntity<?> deleteUser(@PathVariable(USER_ID) String userId) {
     try {
-      final Optional<User> userOptional = userService.getUser(userId);
+      // check if user exists
+      userService.getUser(userId);
 
-      if (userOptional.isEmpty()) {
-        return new ResponseEntity<>("Provided user doesn't exist", HttpStatus.NOT_FOUND);
-      }
-
-      List<Prescription> userPrescriptions = prescriptionService.getPrescriptionsForUser(userId);
-      for (Prescription p : userPrescriptions) {
-        prescriptionService.deletePrescription(p.getPrescriptionId());
+      for(Prescription p : prescriptionService.getPrescriptionsForUser(userId)) {
+        prescriptionService.deletePrescription(p.getId());
       }
 
       userService.deleteUser(userId);
       return new ResponseEntity<>("User deleted successfully", HttpStatus.OK);
+    } catch (ResponseStatusException e) {
+      throw e; // propagates to globalExceptionHandler
     } catch (Exception e) {
-      return new ResponseEntity<>(
-          "Unexpected error encountered during deletion", HttpStatus.INTERNAL_SERVER_ERROR);
+      return new ResponseEntity<>("Unexpected error encountered while deleting user",
+              HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -148,7 +142,7 @@ public class PharmaidController {
    *
    * @param userId  user to add a prescription for
    * @param request request containing prescription-related data
-   * @return a ResponseEntity with the newly creation prescription if the operation is successful,
+   * @return a ResponseEntity with the newly created prescription if the operation is successful,
    *     or an error message if an error occurred
    */
   @PostMapping(path = "/users/{userId}/prescriptions")
@@ -182,7 +176,7 @@ public class PharmaidController {
    *
    * @param userId user whose prescriptions we're trying to retrieve
    * @param prescriptionId  prescription we are trying to update
-   * @param request containg prescription update
+   * @param request containing prescription update
    * @return a ResponseEntity with updated prescription if the operation is successful,
    *      or an error message if an error occurred
    */
@@ -192,37 +186,36 @@ public class PharmaidController {
       @PathVariable(PRESCRIPTION_ID) String prescriptionId,
       @RequestBody @Valid UpdatePrescriptionRequest request) {
     try {
-      final Optional<User> userOptional = userService.getUser(userId);
+      final User user = userService.getUser(userId);
+      final Prescription prescription = prescriptionService.getPrescription(prescriptionId);
 
-      if (userOptional.isEmpty()) {
-        return new ResponseEntity<>("Provided User does not exist", HttpStatus.NOT_FOUND);
+      if(Objects.isNull(request.getIsActive()) && Objects.isNull(request.getEndDate())) {
+        return new ResponseEntity<>("Invalid update request", HttpStatus.BAD_REQUEST);
       }
 
-        // edit here!!!! 
-        if (prescriptionOptional.isEmpty() 
-            || prescriptionOptional.get().getUser().getId() != userId) {
-          return new ResponseEntity<>(
-            "Provided Prescription doesn't exist",
-            HttpStatus.NOT_FOUND);
+      if(user.equals(prescription.getUser())) {
+        if(request.getEndDate() != null) {
+          if(request.getEndDate().compareTo(prescription.getEndDate()) > 0) {
+            prescription.setEndDate(request.getEndDate());
+            // ensure end date is past start date
+          } else {
+            return new ResponseEntity<>("Invalid end date", HttpStatus.BAD_REQUEST);
+          }
         }
-
-        Prescription prescription = prescriptionService.getPrescriptionById(prescriptionId).get();
-
-        if (request.getEndDate() != null) {
-          prescription.setEndDate(request.getEndDate());
-        }
-        
-        if (request.getIsActive() != null) {
+        if(request.getIsActive() != null) {
           prescription.setIsActive(request.getIsActive());
         }
-
-        return new ResponseEntity<>(prescriptionService.updatePrescription(prescription), HttpStatus.OK);
-
-      } catch (Exception e) {
-        return new ResponseEntity<>(
-            "Unexpected error encountered while creating a prescription",
-            HttpStatus.INTERNAL_SERVER_ERROR);
+      } else {
+        return new ResponseEntity<>("Provided prescription/user combination doesn't exist", HttpStatus.NOT_FOUND);
       }
+
+      return new ResponseEntity<>(prescriptionService.updatePrescription(prescription), HttpStatus.OK);
+    } catch (ResponseStatusException e) {
+      throw e; // propagates to globalExceptionHandler
+    } catch (Exception e) {
+      return new ResponseEntity<>("Unexpected error encountered while creating a prescription",
+          HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   /**
@@ -261,25 +254,21 @@ public class PharmaidController {
       @PathVariable(USER_ID) String userId, 
       @PathVariable(PRESCRIPTION_ID) String prescriptionId) {
     try {
-      final Optional<User> userOptional = userService.getUser(userId);
+      final User user = userService.getUser(userId);
+      final Prescription prescription = prescriptionService.getPrescription(prescriptionId);
 
-      if (userOptional.isEmpty()) {
-        return new ResponseEntity<>("User doesn't exist", HttpStatus.NOT_FOUND);
+      if(user.equals(prescription.getUser())) {
+        prescriptionService.deletePrescription(prescriptionId);
+      } else {
+        return new ResponseEntity<>("Provided prescription/user combination doesn't exist", HttpStatus.NOT_FOUND);
       }
 
-      final Optional<Prescription> pOptional 
-          = prescriptionService.getPrescriptionById(prescriptionId);
-
-      if (pOptional.isEmpty()) {
-        return new ResponseEntity<>("Prescription doesn't exist", HttpStatus.NOT_FOUND);
-      }
-
-      prescriptionService.deletePrescription(prescriptionId);
       return new ResponseEntity<>("Prescription removed.", HttpStatus.OK);
+    } catch (ResponseStatusException e) {
+      throw e; // propagates to globalExceptionHandler
     } catch (Exception e) {
-      return new ResponseEntity<>(
-          "Unexpected error encountered while removing prescription.",
-          HttpStatus.INTERNAL_SERVER_ERROR);
+      return new ResponseEntity<>("Unexpected error encountered while getting user prescriptions",
+              HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
