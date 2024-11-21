@@ -195,7 +195,7 @@ public class PharmaidController {
 
       if(user.equals(prescription.getUser())) {
         if(request.getEndDate() != null) {
-          if(request.getEndDate().compareTo(prescription.getEndDate()) > 0) {
+          if(request.getEndDate().compareTo(prescription.getStartDate()) > 0) {
             prescription.setEndDate(request.getEndDate());
             // ensure end date is past start date
           } else {
@@ -213,7 +213,7 @@ public class PharmaidController {
     } catch (ResponseStatusException e) {
       throw e; // propagates to globalExceptionHandler
     } catch (Exception e) {
-      return new ResponseEntity<>("Unexpected error encountered while creating a prescription",
+      return new ResponseEntity<>("Unexpected error encountered while updating the prescription",
           HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }

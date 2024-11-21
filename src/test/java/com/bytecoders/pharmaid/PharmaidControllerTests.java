@@ -273,6 +273,7 @@ public class PharmaidControllerTests {
 
     Prescription mockPrescription = new Prescription();
     String prescriptionId = "prescriptionId";
+    mockPrescription.setStartDate(new Date(request.getEndDate().getTime() - 24*60*60*1000));
     mockPrescription.setUser(mockUser);
     mockPrescription.setId(prescriptionId);
     when(prescriptionService.getPrescription(prescriptionId)).thenReturn(mockPrescription);
@@ -280,7 +281,8 @@ public class PharmaidControllerTests {
     Prescription updatedPrescription = new Prescription();
     updatedPrescription.setUser(mockUser);
     updatedPrescription.setId(prescriptionId);
-    updatedPrescription.setEndDate(new Date());
+    updatedPrescription.setStartDate(new Date(request.getEndDate().getTime() - 24*60*60*1000));
+    updatedPrescription.setEndDate(request.getEndDate());
     updatedPrescription.setIsActive(true);
     when(prescriptionService.updatePrescription(any(Prescription.class))).thenReturn(updatedPrescription);
 
@@ -307,6 +309,7 @@ public class PharmaidControllerTests {
     String prescriptionId = "prescriptionId";
     mockPrescription.setUser(mockUser);
     mockPrescription.setId(prescriptionId);
+    mockPrescription.setStartDate(new Date(request.getEndDate().getTime() - 24*60*60*1000));
     when(prescriptionService.getPrescription(prescriptionId)).thenReturn(mockPrescription);
 
     doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN,
