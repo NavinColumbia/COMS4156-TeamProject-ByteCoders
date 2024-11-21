@@ -44,6 +44,20 @@ public class PrescriptionService {
   }
 
   /**
+   * Update an existing prescription.
+   *
+   * @param prescription the prescription to create
+   * @return Prescription the newly created prescription
+   */
+  public Prescription updatePrescription(Prescription prescription) {
+    // check if user has permissions to update a prescription
+    permissionValidator.validateEditPermission(jwtUtils.getLoggedInUserId(),
+        prescription.getUser().getId());
+
+    return prescriptionRepository.save(prescription);
+  }
+
+  /**
    * Returns a Prescription or throws a ResponseStatusException.
    *
    * @param prescriptionId ID pertaining to the prescription
@@ -58,7 +72,9 @@ public class PrescriptionService {
    * @param prescriptionId the prescription ID
    */
   public void deletePrescription(String prescriptionId) {
-    prescriptionRepository.deleteById(prescriptionId);
+    if(getPrescription(prescriptionId) != null) {
+      prescriptionRepository.deleteById(prescriptionId);
+    }
   }
 
   /**

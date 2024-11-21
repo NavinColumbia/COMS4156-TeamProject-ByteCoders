@@ -45,6 +45,17 @@ public class UserService {
   }
 
   /**
+   * Delete a user service.
+   *
+   * @param userId String of user id
+   */
+  public void deleteUser(String userId) {
+    if(getUser(userId) != null) {
+      userRepository.deleteById(userId);
+    }
+  }
+
+  /**
    * Login user service.
    *
    * @param loginUserRequest request
