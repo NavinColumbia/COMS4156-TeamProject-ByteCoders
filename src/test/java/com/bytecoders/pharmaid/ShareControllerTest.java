@@ -12,14 +12,16 @@ import com.bytecoders.pharmaid.openapi.model.ShareRequestStatus;
 import com.bytecoders.pharmaid.openapi.model.UserType;
 import com.bytecoders.pharmaid.repository.model.SharedPermission;
 import com.bytecoders.pharmaid.repository.model.User;
+import com.bytecoders.pharmaid.security.JwtRequestFilter;
 import com.bytecoders.pharmaid.service.SharedPermissionService;
-import com.bytecoders.pharmaid.util.JwtUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
@@ -27,11 +29,15 @@ import org.springframework.web.server.ResponseStatusException;
 /**
  * Accept, Deny, Request, Revoke endpoint Tests. Mocks JwtUtil and SharePermission.
  */
-@WebMvcTest(ShareController.class)
+@WebMvcTest(
+    value = ShareController.class,
+    excludeFilters = @ComponentScan.Filter(
+        type = FilterType.ASSIGNABLE_TYPE,
+        classes = {JwtRequestFilter.class, AppConfig.class}
+    )
+)
 class ShareControllerTest {
 
-  @MockBean
-  private JwtUtils jwtUtils;
 
   @MockBean
   private SharedPermissionService sharedPermissionService;
@@ -74,12 +80,12 @@ class ShareControllerTest {
   @Test
   void requestAccess_Success() {
     // Mock log in and createSharingRequest()
-    when(jwtUtils.getLoggedInUserId()).thenReturn(requester.getId());
     when(sharedPermissionService.createSharingRequest(requester.getId(), owner.getId(),
         SharePermissionType.EDIT)).thenReturn(permission);
 
     // Generate requestAccess() request
-    ResponseEntity<?> response = shareController.requestAccess(owner.getId(), request);
+    ResponseEntity<?> response = shareController.requestAccess(owner.getId(), requester.getId(),
+        request);
 
     // Assertions
     assertEquals(response.getStatusCode(), HttpStatus.CREATED);
@@ -90,13 +96,12 @@ class ShareControllerTest {
   @Test
   void acceptRequest_Success() {
     // Mock login and shareRequestAction()
-    when(jwtUtils.getLoggedInUserId()).thenReturn(owner.getId());
     when(sharedPermissionService.shareRequestAction(owner.getId(), permission.getId(),
-        ShareRequestStatus.ACCEPT)).thenReturn(permission);
+        ShareRequestStatus.ACCEPT, owner.getId())).thenReturn(permission);
 
     // Generate acceptShareRequest() request
     ResponseEntity<?> response =
-        shareController.acceptShareRequest(owner.getId(), permission.getId());
+        shareController.acceptShareRequest(owner.getId(), permission.getId(), owner.getId());
 
     // Assertions
     assertEquals(response.getStatusCode(), HttpStatus.OK);
@@ -107,13 +112,12 @@ class ShareControllerTest {
   @Test
   void denyRequest_Success() {
     // Mock login and shareRequestAction()
-    when(jwtUtils.getLoggedInUserId()).thenReturn(owner.getId());
     when(sharedPermissionService.shareRequestAction(owner.getId(), permission.getId(),
-        ShareRequestStatus.DENY)).thenReturn(permission);
+        ShareRequestStatus.DENY, owner.getId())).thenReturn(permission);
 
     // Generate denyShareRequest() request
     ResponseEntity<?> response =
-        shareController.denyShareRequest(owner.getId(), permission.getId());
+        shareController.denyShareRequest(owner.getId(), permission.getId(), owner.getId());
 
     // Assertions
     assertEquals(response.getStatusCode(), HttpStatus.OK);
@@ -125,13 +129,12 @@ class ShareControllerTest {
   @Test
   void revokeAccess_Success() {
     // Mock login and shareRequestAction()
-    when(jwtUtils.getLoggedInUserId()).thenReturn(owner.getId());
     doNothing().when(sharedPermissionService)
-        .revokeSharingPermission(owner.getId(), permission.getId());
+        .revokeSharingPermission(owner.getId(), permission.getId(), owner.getId());
 
     // Generate denyShareRequest() request
     ResponseEntity<?> response =
-        shareController.revokeShareAccess(owner.getId(), permission.getId());
+        shareController.revokeShareAccess(owner.getId(), permission.getId(), owner.getId());
 
     // Assertions
     assertEquals(response.getStatusCode(), HttpStatus.OK);
@@ -142,16 +145,16 @@ class ShareControllerTest {
   @Test
   void revokeAccess_Unauthorized() {
     final String unauthorizedMessage = "Not authorized to revoke this request";
+    String unauthorizedUserId = "someoneElse789";
 
     // Mock login and revokeSharingPermission() to throw unauthorized access error
-    when(jwtUtils.getLoggedInUserId()).thenReturn(owner.getId());
-    doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, unauthorizedMessage)).when(
-            sharedPermissionService)
-        .revokeSharingPermission(eq(owner.getId()), eq(permission.getId()));
+    doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, unauthorizedMessage))
+        .when(sharedPermissionService)
+        .revokeSharingPermission(eq(owner.getId()), eq(permission.getId()), eq(unauthorizedUserId));
 
     // Generate revokeShareAccess() request
     ResponseEntity<?> response =
-        shareController.revokeShareAccess(owner.getId(), permission.getId());
+        shareController.revokeShareAccess(owner.getId(), permission.getId(), unauthorizedUserId);
 
     // Assertions
     assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());

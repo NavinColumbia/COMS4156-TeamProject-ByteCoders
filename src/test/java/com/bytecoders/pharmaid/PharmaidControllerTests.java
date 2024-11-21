@@ -1,10 +1,17 @@
 package com.bytecoders.pharmaid;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
 
-import com.bytecoders.pharmaid.openapi.model.*;
+import com.bytecoders.pharmaid.openapi.model.CreatePrescriptionRequest;
+import com.bytecoders.pharmaid.openapi.model.LoginUserRequest;
+import com.bytecoders.pharmaid.openapi.model.LoginUserResponse;
+import com.bytecoders.pharmaid.openapi.model.RegisterUserRequest;
+import com.bytecoders.pharmaid.openapi.model.UpdatePrescriptionRequest;
+import com.bytecoders.pharmaid.openapi.model.UserType;
 import com.bytecoders.pharmaid.repository.model.Medication;
 import com.bytecoders.pharmaid.repository.model.Prescription;
 import com.bytecoders.pharmaid.repository.model.User;
@@ -13,10 +20,11 @@ import com.bytecoders.pharmaid.service.PrescriptionService;
 import com.bytecoders.pharmaid.service.UserService;
 import com.bytecoders.pharmaid.util.JwtUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.util.*;
-
-import org.apache.coyote.Response;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -118,7 +126,6 @@ public class PharmaidControllerTests {
 
   /**
    * Test for successfully deleting a user
-   *
    */
   @Test
   public void deleteUserSuccess() {
@@ -140,14 +147,13 @@ public class PharmaidControllerTests {
 
   /**
    * Test for deleting a user that does not exist
-   *
    */
   @Test
   public void deleteUserInvalidUser() {
     String userId = "userId";
 
     when(userService.getUser(userId)).thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND,
-            String.format("Provided userId does not exist: %s", userId)));
+        String.format("Provided userId does not exist: %s", userId)));
 
     ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
       testController.deleteUser(userId);
@@ -155,7 +161,7 @@ public class PharmaidControllerTests {
 
     assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
     assertEquals(String.format("Provided userId does not exist: %s", userId),
-            exception.getReason());
+        exception.getReason());
   }
 
   /**
@@ -273,7 +279,7 @@ public class PharmaidControllerTests {
 
     Prescription mockPrescription = new Prescription();
     String prescriptionId = "prescriptionId";
-    mockPrescription.setStartDate(new Date(request.getEndDate().getTime() - 24*60*60*1000));
+    mockPrescription.setStartDate(new Date(request.getEndDate().getTime() - 24 * 60 * 60 * 1000));
     mockPrescription.setUser(mockUser);
     mockPrescription.setId(prescriptionId);
     when(prescriptionService.getPrescription(prescriptionId)).thenReturn(mockPrescription);
@@ -281,12 +287,15 @@ public class PharmaidControllerTests {
     Prescription updatedPrescription = new Prescription();
     updatedPrescription.setUser(mockUser);
     updatedPrescription.setId(prescriptionId);
-    updatedPrescription.setStartDate(new Date(request.getEndDate().getTime() - 24*60*60*1000));
+    updatedPrescription.setStartDate(
+        new Date(request.getEndDate().getTime() - 24 * 60 * 60 * 1000));
     updatedPrescription.setEndDate(request.getEndDate());
     updatedPrescription.setIsActive(true);
-    when(prescriptionService.updatePrescription(any(Prescription.class))).thenReturn(updatedPrescription);
+    when(prescriptionService.updatePrescription(any(Prescription.class))).thenReturn(
+        updatedPrescription);
 
-    ResponseEntity<?> response = testController.updateUsersPrescription(userId, prescriptionId, request);
+    ResponseEntity<?> response = testController.updateUsersPrescription(userId, prescriptionId,
+        request);
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertEquals(updatedPrescription, response.getBody());
   }
@@ -309,13 +318,13 @@ public class PharmaidControllerTests {
     String prescriptionId = "prescriptionId";
     mockPrescription.setUser(mockUser);
     mockPrescription.setId(prescriptionId);
-    mockPrescription.setStartDate(new Date(request.getEndDate().getTime() - 24*60*60*1000));
+    mockPrescription.setStartDate(new Date(request.getEndDate().getTime() - 24 * 60 * 60 * 1000));
     when(prescriptionService.getPrescription(prescriptionId)).thenReturn(mockPrescription);
 
     doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN,
-            String.format("User %s is not authorized to edit prescriptions for user: %s",
-                    jwtUtils.getLoggedInUserId(), userId))).when(prescriptionService)
-            .updatePrescription(any(Prescription.class));
+        String.format("User %s is not authorized to edit prescriptions for user: %s",
+            jwtUtils.getLoggedInUserId(), userId))).when(prescriptionService)
+        .updatePrescription(any(Prescription.class));
 
     ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
       testController.updateUsersPrescription(userId, prescriptionId, request);
@@ -323,7 +332,7 @@ public class PharmaidControllerTests {
 
     assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
     assertEquals(String.format("User %s is not authorized to edit prescriptions for user: %s",
-            jwtUtils.getLoggedInUserId(), userId), exception.getReason());
+        jwtUtils.getLoggedInUserId(), userId), exception.getReason());
   }
 
   /**
@@ -349,9 +358,11 @@ public class PharmaidControllerTests {
     request.setEndDate(new Date());
     request.setIsActive(true);
 
-    final ResponseEntity<?> updatedPrescription = testController.updateUsersPrescription(userId, prescriptionId, request);
+    final ResponseEntity<?> updatedPrescription = testController.updateUsersPrescription(userId,
+        prescriptionId, request);
     assertEquals(updatedPrescription.getStatusCode(), HttpStatus.NOT_FOUND);
-    assertEquals(updatedPrescription.getBody(), "Provided prescription/user combination doesn't exist");
+    assertEquals(updatedPrescription.getBody(),
+        "Provided prescription/user combination doesn't exist");
   }
 
   /**
@@ -363,16 +374,17 @@ public class PharmaidControllerTests {
     String prescriptionId = "prescriptionId";
     UpdatePrescriptionRequest request = new UpdatePrescriptionRequest();
 
-    final ResponseEntity<?> updatedPrescription = testController.updateUsersPrescription(userId, prescriptionId, request);
+    final ResponseEntity<?> updatedPrescription = testController.updateUsersPrescription(userId,
+        prescriptionId, request);
     assertEquals(HttpStatus.BAD_REQUEST, updatedPrescription.getStatusCode());
-    assertEquals("Invalid update request", updatedPrescription.getBody() );
+    assertEquals("Invalid update request", updatedPrescription.getBody());
   }
 
   /**
    * Test for successfully deleting a user's prescription
    */
-   @Test
-   public void removePrescriptionSuccess() {
+  @Test
+  public void removePrescriptionSuccess() {
     User mockUser = new User();
     String userId = "userId";
     mockUser.setId(userId);
@@ -386,11 +398,12 @@ public class PharmaidControllerTests {
 
     when(userService.getUser(userId)).thenReturn(mockUser);
     when(prescriptionService.getPrescription(prescriptionId)).thenReturn(mockPrescription);
- 
-    final ResponseEntity<?> deletedPrescription = testController.removePrescription(userId, prescriptionId);
+
+    final ResponseEntity<?> deletedPrescription = testController.removePrescription(userId,
+        prescriptionId);
     assertEquals(HttpStatus.OK, deletedPrescription.getStatusCode());
-    assertEquals("Prescription removed.", deletedPrescription.getBody() );
-   }
+    assertEquals("Prescription removed.", deletedPrescription.getBody());
+  }
 
 
   /**
@@ -407,7 +420,7 @@ public class PharmaidControllerTests {
     mockPrescription.setId(prescriptionId);
 
     when(userService.getUser(userId)).thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND,
-            String.format("Provided user does not exist: %s", userId)));
+        String.format("Provided user does not exist: %s", userId)));
 
     ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
       testController.removePrescription(userId, prescriptionId);
@@ -415,7 +428,7 @@ public class PharmaidControllerTests {
 
     assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
     assertEquals(String.format("Provided user does not exist: %s", userId),
-            exception.getReason());
+        exception.getReason());
 
   }
 
@@ -432,7 +445,8 @@ public class PharmaidControllerTests {
     String prescriptionId = "prescriptionId";
     mockPrescription.setId(prescriptionId);
 
-    when(prescriptionService.getPrescription(prescriptionId)).thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND,
+    when(prescriptionService.getPrescription(prescriptionId)).thenThrow(
+        new ResponseStatusException(HttpStatus.NOT_FOUND,
             String.format("Provided prescription does not exist: %s", prescriptionId)));
 
     ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
@@ -441,11 +455,12 @@ public class PharmaidControllerTests {
 
     assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
     assertEquals(String.format("Provided prescription does not exist: %s", prescriptionId),
-            exception.getReason());
+        exception.getReason());
   }
 
   /**
-   * Test for failure to remove prescription operation because prescription does not exist for the provided user
+   * Test for failure to remove prescription operation because prescription does not exist for the
+   * provided user
    */
   @Test
   public void removePrescriptionInvalidUserPrescriptionCombo() {
@@ -465,9 +480,11 @@ public class PharmaidControllerTests {
     when(prescriptionService.getPrescription(prescriptionId)).thenReturn(mockPrescription);
     when(userService.getUser(userId)).thenReturn(mockUser);
 
-    ResponseEntity<?> removedPrescription = testController.removePrescription(userId, prescriptionId);
+    ResponseEntity<?> removedPrescription = testController.removePrescription(userId,
+        prescriptionId);
     assertEquals(HttpStatus.NOT_FOUND, removedPrescription.getStatusCode());
-    assertEquals("Provided prescription/user combination doesn't exist", removedPrescription.getBody());
+    assertEquals("Provided prescription/user combination doesn't exist",
+        removedPrescription.getBody());
   }
 
   /**
@@ -488,9 +505,9 @@ public class PharmaidControllerTests {
     when(prescriptionService.getPrescription(prescriptionId)).thenReturn(mockPrescription);
 
     doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN,
-            String.format("User %s is not authorized to edit prescriptions of user: %s",
-                    jwtUtils.getLoggedInUserId(), userId))).when(prescriptionService)
-            .deletePrescription(prescriptionId);
+        String.format("User %s is not authorized to edit prescriptions of user: %s",
+            jwtUtils.getLoggedInUserId(), userId))).when(prescriptionService)
+        .deletePrescription(prescriptionId);
 
     ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
       testController.removePrescription(userId, prescriptionId);
@@ -498,7 +515,7 @@ public class PharmaidControllerTests {
 
     assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
     assertEquals(String.format("User %s is not authorized to edit prescriptions of user: %s",
-            jwtUtils.getLoggedInUserId(), userId), exception.getReason());
+        jwtUtils.getLoggedInUserId(), userId), exception.getReason());
   }
 
   /**
