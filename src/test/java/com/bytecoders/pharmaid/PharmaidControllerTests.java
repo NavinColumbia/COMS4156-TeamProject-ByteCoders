@@ -3,8 +3,7 @@ package com.bytecoders.pharmaid;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import com.bytecoders.pharmaid.openapi.model.CreatePrescriptionRequest;
 import com.bytecoders.pharmaid.openapi.model.LoginUserRequest;
@@ -143,9 +142,15 @@ public class PharmaidControllerTests {
     List<Prescription> mockUsersPrescriptions = new ArrayList<>();
     mockUsersPrescriptions.add(mockPrescription);
 
+    when(userService.getUser(userId)).thenReturn(mockUser);
+    when(prescriptionService.getPrescriptionsForUser(userId)).thenReturn(mockUsersPrescriptions);
+
     final ResponseEntity<?> deletedUser = testController.deleteUser(userId);
     assertEquals(deletedUser.getStatusCode(), HttpStatus.OK);
     assertEquals(deletedUser.getBody(), "User deleted successfully");
+
+    verify(prescriptionService).deletePrescription(prescriptionId);
+    verify(userService).deleteUser(userId);
   }
 
   /**
@@ -165,6 +170,9 @@ public class PharmaidControllerTests {
     assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
     assertEquals(String.format("Provided userId does not exist: %s", userId),
         exception.getReason());
+
+    verify(prescriptionService, never()).getPrescriptionsForUser(anyString());
+    verify(prescriptionService, never()).deletePrescription(anyString());
   }
 
   /**
@@ -267,7 +275,7 @@ public class PharmaidControllerTests {
   }
 
   /**
-   * Test for updating a prescription successfully.
+   * Test for updating a prescription's end date and active status successfully.
    */
   @Test
   void testUpdatePrescriptionSuccess() {
@@ -301,6 +309,81 @@ public class PharmaidControllerTests {
         testController.updateUsersPrescription(userId, prescriptionId, request);
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertEquals(updatedPrescription, response.getBody());
+  }
+
+  /**
+   * Test for updating a prescription's end date successfully.
+   */
+  @Test
+  void testUpdatePrescriptionEndDateSuccess() {
+    UpdatePrescriptionRequest request = new UpdatePrescriptionRequest();
+    request.setEndDate(new Date());
+
+    User mockUser = new User();
+    String userId = "userId";
+    mockUser.setId(userId);
+    when(userService.getUser(userId)).thenReturn(mockUser);
+
+    Prescription mockPrescription = new Prescription();
+    String prescriptionId = "prescriptionId";
+    mockPrescription.setStartDate(new Date(request.getEndDate().getTime() - 24 * 60 * 60 * 1000));
+    mockPrescription.setUser(mockUser);
+    mockPrescription.setId(prescriptionId);
+    when(prescriptionService.getPrescription(prescriptionId)).thenReturn(mockPrescription);
+
+    Prescription updatedPrescription = new Prescription();
+    updatedPrescription.setUser(mockUser);
+    updatedPrescription.setId(prescriptionId);
+    updatedPrescription.setStartDate(
+            new Date(request.getEndDate().getTime() - 24 * 60 * 60 * 1000));
+    updatedPrescription.setEndDate(request.getEndDate());
+    updatedPrescription.setIsActive(true);
+    when(prescriptionService.updatePrescription(any(Prescription.class))).thenReturn(
+            updatedPrescription);
+
+    ResponseEntity<?> response =
+            testController.updateUsersPrescription(userId, prescriptionId, request);
+    assertEquals(HttpStatus.OK, response.getStatusCode());
+    assertEquals(updatedPrescription, response.getBody());
+  }
+
+  /**
+   * Test for attempting to update a prescription's end date with invalid date.
+   */
+  @Test
+  void testUpdatePrescriptionInvalidEndDate() {
+    UpdatePrescriptionRequest request = new UpdatePrescriptionRequest();
+    request.setIsActive(true);
+
+    User mockUser = new User();
+    String userId = "userId";
+    mockUser.setId(userId);
+    when(userService.getUser(userId)).thenReturn(mockUser);
+
+    Prescription mockPrescription = new Prescription();
+    String prescriptionId = "prescriptionId";
+    mockPrescription.setStartDate(new Date());
+    mockPrescription.setUser(mockUser);
+    mockPrescription.setId(prescriptionId);
+    when(prescriptionService.getPrescription(prescriptionId)).thenReturn(mockPrescription);
+
+    Prescription updatedPrescription = new Prescription();
+    updatedPrescription.setUser(mockUser);
+    updatedPrescription.setId(prescriptionId);
+    updatedPrescription.setStartDate(new Date());
+    updatedPrescription.setIsActive(true);
+    when(prescriptionService.updatePrescription(any(Prescription.class))).thenReturn(
+            updatedPrescription);
+
+    doThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid end date")).when(prescriptionService)
+            .updatePrescription(any(Prescription.class));
+
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
+      testController.updateUsersPrescription(userId, prescriptionId, request);
+    });
+
+    assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+    //assertEquals(updatedPrescription, response.getBody());
   }
 
   /**
