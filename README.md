@@ -66,14 +66,14 @@ As part of `mvn clean verify`, tests under `./src/test/java` should execute.
 From the previously run `mvn clean verify`, find `.txt` files under `./target/surefire-reports/` to
 view test results or run `mvn clean test` and view console output.
 
-![All tests ran successfully](https://dl.dropbox.com/scl/fi/e86n0krsbt47rapbirvre/tests_pass.png?rlkey=br2zkd43adfuq2910nvrvbd92&st=4rrf5jf5&dl=0)
+![All tests ran successfully](https://www.dropbox.com/scl/fi/p0mt8pspkhw8nu5r0b41u/Screenshot-2024-11-27-at-2.29.00-PM.png?rlkey=oo1aluaoxnwd3z10mmakeilds&st=x5r653qx&raw=1)
 
 ### Jacoco Report
 
 After running `mvn clean verify`, view test coverage at `/target/site/jacoco/index.html` and
 open with any browser to view jacoco results
 
-![jacoco report shows >90% coverage](https://dl.dropbox.com/scl/fi/2pghifroxe70n9w81wgho/jacoco_check.png?rlkey=awerv5sflnh66vopyxq3feysk&st=wo21q0yf&dl=0)
+![jacoco report shows >90% coverage](https://www.dropbox.com/scl/fi/fk071xnw7vxbav1kutkie/Screenshot-2024-11-27-at-2.39.45-PM.png?rlkey=0ogcg5ro6um1rsuva5parxv7h&st=7mcjwix9&raw=1)
 
 # API Endpoint Documentation
 
