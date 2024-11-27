@@ -60,14 +60,13 @@ class PharmaidIntegrationTests {
         new HttpComponentsClientHttpRequestFactory();
     return new RestTemplate(requestFactory);
   }
-
+  
   Map<String, String> patientUser = new HashMap<>();
   Map<String, String> healthcareUser = new HashMap<>();
   Map<String, String> firstResponderUser = new HashMap<>();
 
   @BeforeAll
   void setup() throws IOException {
-    // (0) setup
     jdbcTemplate.execute("DELETE FROM prescriptions;");
     jdbcTemplate.execute("DELETE FROM shared_permissions;");
     jdbcTemplate.execute("DELETE FROM users;");
@@ -98,364 +97,361 @@ class PharmaidIntegrationTests {
 
   @Test
   @Order(1)
-  void fullIntegrationTest() throws InterruptedException {
-
-    // (1) TEST ACTIVE PROFILE
-    Thread.sleep(1000);
+  void integrationTestActiveProfile_Success() {
     assertEquals("staging", activeProfile);
     log.info("(1) FullIntegrationTests active Spring profile: {}", activeProfile);
+  }
 
-    // (2) TEST HELLO ENDPOINT
-    ResponseEntity<String> helloResponse =
-        restTemplate.getForEntity(baseUrl + "/hello", String.class);
-    assertEquals(HttpStatus.OK, helloResponse.getStatusCode(),
-        "Unexpected HTTP status from /hello");
-    assertEquals("Hello :)", helloResponse.getBody(), "Unexpected response body from /hello");
-    log.info("(2) Response from /hello: {}", helloResponse.getBody());
+  @Test
+  @Order(2)
+  void helloEndpoint_Success() {
+    String url = baseUrl + "/hello";
+    ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
 
-    // (3) REGISTER CLIENT
+    assertEquals(HttpStatus.OK, response.getStatusCode(), "Unexpected HTTP status from /hello");
+    assertEquals("Hello :)", response.getBody(), "Unexpected response body from /hello");
+    log.info("(2) Response from /hello: {}", response.getBody());
+  }
+
+  @Test
+  @Order(3)
+  void registerClients() {
     List<Map<String, String>> users = List.of(patientUser, healthcareUser, firstResponderUser);
-    final String registerUrl = baseUrl + "/register";
+
+    // register all entities in `users`
     for (Map<String, String> user : users) {
-      Thread.sleep(1000);
-
-      // request body and (null) headers
-      HttpEntity<Map<String, String>> registerEntity = new HttpEntity<>(user, null);
-
-      // register request response
-      ResponseEntity<Map<String, String>> registerResponse =
-          restTemplate.exchange(registerUrl, HttpMethod.POST, registerEntity,
+      String url = baseUrl + "/register";
+      HttpEntity<Map<String, String>> entity = new HttpEntity<>(user, null);
+      ResponseEntity<Map<String, String>> response =
+          restTemplate.exchange(url, HttpMethod.POST, entity,
               new ParameterizedTypeReference<Map<String, String>>() {
               });
+      Map<String, String> responseBody = (Map<String, String>) response.getBody();
 
-      // assertions
-      Map<String, String> registerResponseBody = (Map<String, String>) registerResponse.getBody();
-      assertNotNull(registerResponseBody,
-          "Register client response body should not be null for " + user.get("email"));
-      assertNotNull(registerResponseBody.get("id"),
-          "Register client userId should not be null for " + user.get("email"));
-      assertEquals(HttpStatus.CREATED, registerResponse.getStatusCode(),
-          "Register client failed for " + user.get("email"));
+      // Validate response
+      assertNotNull(responseBody, "Response body should not be null for " + user.get("email"));
+
+      assertNotNull(responseBody.get("id"), "userId should not be null for " + user.get("email"));
+
+      assertEquals(HttpStatus.CREATED, response.getStatusCode(),
+          "Login failed for " + user.get("email"));
 
       log.info("(3) Registered {}", user.get("userType"));
     }
+  }
 
-    // (4) LOGIN CLIENTS
-    final String loginUrl = baseUrl + "/login";
+  @Test
+  @Order(4)
+  void loginClients() {
+    List<Map<String, String>> users = List.of(patientUser, healthcareUser, firstResponderUser);
+
+    // register all entities in `users`
     for (Map<String, String> user : users) {
-      Thread.sleep(1000);
-
-      // create login request body
       Map<String, String> loginRequest = new HashMap<>();
       loginRequest.put("email", user.get("email"));
       loginRequest.put("password", user.get("password"));
 
-      // create login request
-      HttpEntity<Map<String, String>> loginEntity = new HttpEntity<>(loginRequest, null);
+      String url = baseUrl + "/login";
+      HttpEntity<Map<String, String>> entity = new HttpEntity<>(loginRequest, null);
       ResponseEntity<Map<String, String>> response =
-          restTemplate.exchange(loginUrl, HttpMethod.POST, loginEntity,
+          restTemplate.exchange(url, HttpMethod.POST, entity,
               new ParameterizedTypeReference<Map<String, String>>() {
               });
-
-      // assertions
       Map<String, String> responseBody = (Map<String, String>) response.getBody();
+
+      // Validate response
       assertNotNull(responseBody, "Response body should not be null for " + user.get("email"));
+
       assertNotNull(responseBody.get("userId"),
           "userId should not be null for " + user.get("email"));
+
       assertEquals(HttpStatus.OK, response.getStatusCode(),
           "Login failed for " + user.get("email"));
 
-      // store userId and JWT in user object
       user.put("userId", responseBody.get("userId"));
       user.put("JWT", responseBody.get("token"));
-      log.info("(4) Logged in {}", user.get("userType"));
+      log.info("(4) Logged in {}", responseBody.get("userType"));
+      log.info("(4) {} JWT: {}", user.get("userType"), user.get("JWT"));
     }
+  }
 
-    // (5) FIRST_RESPONDER VIEW ACCESS
-    Thread.sleep(1000);
-    final String viewRequestUrl =
+  @Test
+  @Order(5)
+  void firstResponderRequestPatientViewAccess() {
+    // request access to VIEW patient prescriptions
+    final String url =
         String.format("%s/users/%s/requests?requesterId=%s", baseUrl, patientUser.get("userId"),
             firstResponderUser.get("userId"));
 
-    // request body
-    Map<String, String> viewRequestBody = new HashMap<>();
-    viewRequestBody.put("sharePermissionType", "VIEW");
+    // create request body
+    Map<String, String> requestBody = new HashMap<>();
+    requestBody.put("sharePermissionType", "VIEW");
 
     // create headers
-    HttpHeaders viewRequestHeaders = new HttpHeaders();
-    viewRequestHeaders.set("Authorization", "Bearer " + firstResponderUser.get("JWT"));
-    viewRequestHeaders.setContentType(MediaType.APPLICATION_JSON);
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("Authorization", "Bearer " + firstResponderUser.get("JWT"));
+    headers.setContentType(MediaType.APPLICATION_JSON);
 
-    // request body and headers
-    HttpEntity<Map<String, String>> viewRequestEntity =
-        new HttpEntity<>(viewRequestBody, viewRequestHeaders);
-
-    // generate request
-    ResponseEntity<Map<String, Object>> viewRequestResponse =
-        restTemplate.exchange(viewRequestUrl, HttpMethod.POST, viewRequestEntity,
+    // create POST request
+    HttpEntity<Map<String, String>> entity = new HttpEntity<>(requestBody, headers);
+    ResponseEntity<Map<String, Object>> response =
+        restTemplate.exchange(url, HttpMethod.POST, entity,
             new ParameterizedTypeReference<Map<String, Object>>() {
             });
+    Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
 
     // add shareRequestId to user Map
-    Map<String, Object> viewResponseBody = (Map<String, Object>) viewRequestResponse.getBody();
-    patientUser.put("FR_shareRequestId", (String) viewResponseBody.get("id"));
+    patientUser.put("FR_shareRequestId", (String) responseBody.get("id"));
 
-    // assertions
-    assertEquals(HttpStatus.CREATED, viewRequestResponse.getStatusCode(),
+    assertEquals(HttpStatus.CREATED, response.getStatusCode(),
         "VIEW access request failed for " + firstResponderUser.get("email")
             + " to request access to patient records of " + patientUser.get("email"));
     log.info("(5) Created FIRST_RESPONDER share request");
+  }
 
-    // (6) HEALTHCARE_PROVIDER EDIT ACCESS
-    Thread.sleep(1000);
-    final String editAccessUrl =
+  @Test
+  @Order(6)
+  void healthcareProviderRequestPatientEditAccess() {
+    // request access to VIEW patient prescriptions
+    final String url =
         String.format("%s/users/%s/requests?requesterId=%s", baseUrl, patientUser.get("userId"),
             healthcareUser.get("userId"));
 
     // create request body
-    Map<String, String> editRequestBody = new HashMap<>();
-    editRequestBody.put("sharePermissionType", "EDIT");
+    Map<String, String> requestBody = new HashMap<>();
+    requestBody.put("sharePermissionType", "EDIT");
 
     // create headers
-    HttpHeaders editRequestHeaders = new HttpHeaders();
-    editRequestHeaders.set("Authorization", "Bearer " + healthcareUser.get("JWT"));
-    editRequestHeaders.setContentType(MediaType.APPLICATION_JSON);
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("Authorization", "Bearer " + healthcareUser.get("JWT"));
+    headers.setContentType(MediaType.APPLICATION_JSON);
 
     // create POST request
-    HttpEntity<Map<String, String>> editRequestEntity =
-        new HttpEntity<>(editRequestBody, editRequestHeaders);
-    ResponseEntity<Map<String, Object>> editRequestResponse =
-        restTemplate.exchange(editAccessUrl, HttpMethod.POST, editRequestEntity,
+    HttpEntity<Map<String, String>> entity = new HttpEntity<>(requestBody, headers);
+    ResponseEntity<Map<String, Object>> response =
+        restTemplate.exchange(url, HttpMethod.POST, entity,
             new ParameterizedTypeReference<Map<String, Object>>() {
             });
 
     // Create response body, add shareRequestId to patientUser object
-    Map<String, Object> editRequestResponseBody =
-        (Map<String, Object>) editRequestResponse.getBody();
+    Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
 
     // add shareRequestId to user Map
-    patientUser.put("HC_shareRequestId", (String) editRequestResponseBody.get("id"));
+    patientUser.put("HC_shareRequestId", (String) responseBody.get("id"));
 
-    assertEquals(HttpStatus.CREATED, editRequestResponse.getStatusCode(),
+    assertEquals(HttpStatus.CREATED, response.getStatusCode(),
         "EDIT access request failed for " + healthcareUser.get("email")
             + " to request access to patient records of " + patientUser.get("email"));
 
     log.info("(6) Created HEALTHCARE_PROVIDER share request");
+  }
 
-    // (7) PATIENT CREATE PRESCRIPTION
-    Thread.sleep(1000);
-    final String prescriptionUrl =
+  @Test
+  @Order(7)
+  void createPatientPrescription() {
+    final String url =
         String.format("%s/users/%s/prescriptions", baseUrl, patientUser.get("userId"));
 
     // create request body
-    Map<String, String> prescriptionRequestBody = new HashMap<>();
-    prescriptionRequestBody.put("medicationId", "5ae86c4c-b85d-4e87-9db1-24931f431372");
-    prescriptionRequestBody.put("dosage", "1");
-    prescriptionRequestBody.put("numOfDoses", "2");
-    prescriptionRequestBody.put("startDate", "2024-11-26");
-    prescriptionRequestBody.put("endDate", "2024-12-13");
-    prescriptionRequestBody.put("isActive", "true");
+    Map<String, String> requestBody = new HashMap<>();
+    requestBody.put("medicationId", "5ae86c4c-b85d-4e87-9db1-24931f431372");
+    requestBody.put("dosage", "1");
+    requestBody.put("numOfDoses", "2");
+    requestBody.put("startDate", "2024-11-26");
+    requestBody.put("endDate", "2024-12-13");
+    requestBody.put("isActive", "true");
 
     // create headers
-    HttpHeaders prescriptionHeaders = new HttpHeaders();
-    prescriptionHeaders.set("Authorization", "Bearer " + patientUser.get("JWT"));
-    prescriptionHeaders.setContentType(MediaType.APPLICATION_JSON);
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("Authorization", "Bearer " + patientUser.get("JWT"));
+    headers.setContentType(MediaType.APPLICATION_JSON);
 
     // create POST request
-    HttpEntity<Map<String, String>> prescriptionEntity =
-        new HttpEntity<>(prescriptionRequestBody, prescriptionHeaders);
-
-    ResponseEntity<Map<String, Object>> prescriptionResponse =
-        restTemplate.exchange(prescriptionUrl, HttpMethod.POST, prescriptionEntity,
+    HttpEntity<Map<String, String>> entity = new HttpEntity<>(requestBody, headers);
+    ResponseEntity<Map<String, Object>> response =
+        restTemplate.exchange(url, HttpMethod.POST, entity,
             new ParameterizedTypeReference<Map<String, Object>>() {
             });
 
-    assertEquals(HttpStatus.CREATED, prescriptionResponse.getStatusCode(),
+    assertEquals(HttpStatus.CREATED, response.getStatusCode(),
         "Create prescription failed for " + patientUser.get("email"));
 
-    Map<String, Object> prescriptionResponseBody =
-        (Map<String, Object>) prescriptionResponse.getBody();
-    patientUser.put("prescriptionId", (String) prescriptionResponseBody.get("id"));
-    log.info("(7) Created PATIENT prescription");
+    Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
+    patientUser.put("prescriptionId", (String) responseBody.get("id"));
+    log.info("(7) Created patient prescriptionId: {}", responseBody.get("id"));
+  }
 
-    // (8) ACCEPT HEALTHCARE_PROVIDER SHARE REQUEST
-    Thread.sleep(1000);
-    final String acceptShareUrlHealth =
+  @Test
+  @Order(8)
+  void acceptHealthcareShareRequest() {
+    final String url =
         String.format("%s/users/%s/requests/%s/accept", baseUrl, patientUser.get("userId"),
             patientUser.get("HC_shareRequestId"));
 
     // create headers
-    HttpHeaders acceptHealthHeaders = new HttpHeaders();
-    acceptHealthHeaders.set("Authorization", "Bearer " + patientUser.get("JWT"));
-    acceptHealthHeaders.setContentType(MediaType.APPLICATION_JSON);
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("Authorization", "Bearer " + patientUser.get("JWT"));
+    headers.setContentType(MediaType.APPLICATION_JSON);
 
     // create POST request
-    HttpEntity<Void> acceptHealthEntity = new HttpEntity<>(null, acceptHealthHeaders);
-
-    ResponseEntity<Map<String, Object>> acceptHealthResponse =
-        restTemplate.exchange(acceptShareUrlHealth, HttpMethod.POST, acceptHealthEntity,
+    HttpEntity<Void> entity = new HttpEntity<>(null, headers);
+    ResponseEntity<Map<String, Object>> response =
+        restTemplate.exchange(url, HttpMethod.POST, entity,
             new ParameterizedTypeReference<Map<String, Object>>() {
             });
 
-    // assertions
-    assertEquals(HttpStatus.OK, acceptHealthResponse.getStatusCode(),
+    assertEquals(HttpStatus.OK, response.getStatusCode(),
         "Share request accept with HEALTHCARE_PROVIDER failed for " + patientUser.get("email"));
-    log.info("(8) Accepted share request from HEALTHCARE_PROVIDER");
 
-    // (9) FIRST_RESPONDER VIEW PRESCRIPTIONS
-    Thread.sleep(1000);
-    final String viewPrescriptionsUrl =
+    Map<String, Object> responseBody = response.getBody();
+    log.info("(8) Accepted share request from HEALTHCARE_PROVIDER");
+  }
+
+  @Test
+  @Order(9)
+  void viewPrescriptionsAsFirstResponder() {
+    final String url =
         String.format("%s/users/%s/prescriptions", baseUrl, patientUser.get("userId"));
 
     // create headers
-    HttpHeaders viewPrescriptionsHeaders = new HttpHeaders();
-    viewPrescriptionsHeaders.set("Authorization", "Bearer " + firstResponderUser.get("JWT"));
-    viewPrescriptionsHeaders.setContentType(MediaType.APPLICATION_JSON);
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("Authorization", "Bearer " + firstResponderUser.get("JWT"));
+    headers.setContentType(MediaType.APPLICATION_JSON);
 
-    // GET prescriptions
-    HttpEntity<Void> viewPrescriptionsEntity = new HttpEntity<>(null, viewPrescriptionsHeaders);
-
-    ResponseEntity<List<Map<String, Object>>> viewPrescriptionsResponse =
-        restTemplate.exchange(viewPrescriptionsUrl, HttpMethod.GET, viewPrescriptionsEntity,
+    // create GET request
+    HttpEntity<Void> entity = new HttpEntity<>(null, headers);
+    ResponseEntity<List<Map<String, Object>>> response =
+        restTemplate.exchange(url, HttpMethod.GET, entity,
             new ParameterizedTypeReference<List<Map<String, Object>>>() {
             });
 
-    // assertions
-    assertEquals(HttpStatus.OK, viewPrescriptionsResponse.getStatusCode(),
+    assertEquals(HttpStatus.OK, response.getStatusCode(),
         "Prescription VIEW via FIRST_RESPONDER failed");
     log.info("(9) Viewed prescriptions as FIRST_RESPONDER");
+  }
 
-    // (10) PATIENT EDIT PRESCRIPTIONS
-    Thread.sleep(1000);
-    final String ediPrescriptionsPatientUrl =
+  @Test
+  @Order(10)
+  void editPrescriptionsAsPatient() {
+    final String url =
         String.format("%s/users/%s/prescriptions/%s", baseUrl, patientUser.get("userId"),
             patientUser.get("prescriptionId"));
 
     // request body
-    Map<String, String> editPrescriptionsPatientRequestBody = new HashMap<>();
-    editPrescriptionsPatientRequestBody.put("endDate", "2025-01-20");
+    Map<String, String> requestBody = new HashMap<>();
+    requestBody.put("endDate", "2025-01-20");
 
     // create headers
-    HttpHeaders editPrescriptionsPatientHeaders = new HttpHeaders();
-    editPrescriptionsPatientHeaders.set("Authorization", "Bearer " + patientUser.get("JWT"));
-    editPrescriptionsPatientHeaders.setContentType(MediaType.APPLICATION_JSON);
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("Authorization", "Bearer " + patientUser.get("JWT"));
+    headers.setContentType(MediaType.APPLICATION_JSON);
 
-    // PATCH prescriptions as PATIENT
-    HttpEntity<Map<String, String>> editPrescriptionsPatientEntity =
-        new HttpEntity<>(editPrescriptionsPatientRequestBody, editPrescriptionsPatientHeaders);
-
-    ResponseEntity<Map<String, Object>> editPrescriptionsPatientResponse =
-        restTemplate.exchange(ediPrescriptionsPatientUrl, HttpMethod.PATCH,
-            editPrescriptionsPatientEntity,
+    // create PATCH request
+    HttpEntity<Map<String, String>> entity = new HttpEntity<>(requestBody, headers);
+    ResponseEntity<Map<String, Object>> response =
+        restTemplate.exchange(url, HttpMethod.PATCH, entity,
             new ParameterizedTypeReference<Map<String, Object>>() {
             });
 
-    assertEquals(HttpStatus.OK, editPrescriptionsPatientResponse.getStatusCode(),
+    assertEquals(HttpStatus.OK, response.getStatusCode(),
         "Prescription failed to update via PATIENT");
     log.info("(10) Updated prescriptions as PATIENT");
+  }
 
-    // (11) HEALTHCARE_PROVIDER EDIT PRESCRIPTIONS
-    Thread.sleep(1000);
-    final String editPrescriptionsHealthcareUrl =
+  @Test
+  @Order(11)
+  void editPrescriptionsAsHealthcareProvider() {
+    final String url =
         String.format("%s/users/%s/prescriptions/%s", baseUrl, patientUser.get("userId"),
             patientUser.get("prescriptionId"));
 
     // request body
-    Map<String, String> editPrescriptionsHealthcareRequestBody = new HashMap<>();
-    editPrescriptionsHealthcareRequestBody.put("isActive", "false");
+    Map<String, String> requestBody = new HashMap<>();
+    requestBody.put("isActive", "false");
 
     // create headers
-    HttpHeaders editPrescriptionsHealthcareHeaders = new HttpHeaders();
-    editPrescriptionsHealthcareHeaders.set("Authorization",
-        "Bearer " + healthcareUser.get("JWT"));
-    editPrescriptionsHealthcareHeaders.setContentType(MediaType.APPLICATION_JSON);
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("Authorization", "Bearer " + healthcareUser.get("JWT"));
+    headers.setContentType(MediaType.APPLICATION_JSON);
 
-    // PATCH prescriptions as HEALTHCARE_PROVIDER
-    HttpEntity<Map<String, String>> editPrescriptionsHealthcareEntity =
-        new HttpEntity<>(editPrescriptionsHealthcareRequestBody,
-            editPrescriptionsHealthcareHeaders);
-
-    ResponseEntity<Map<String, Object>> editPrescriptionsHealthcareResponse =
-        restTemplate.exchange(editPrescriptionsHealthcareUrl, HttpMethod.PATCH,
-            editPrescriptionsHealthcareEntity,
+    // create PATCH request
+    HttpEntity<Map<String, String>> entity = new HttpEntity<>(requestBody, headers);
+    ResponseEntity<Map<String, Object>> response =
+        restTemplate.exchange(url, HttpMethod.PATCH, entity,
             new ParameterizedTypeReference<Map<String, Object>>() {
             });
 
-    assertEquals(HttpStatus.OK, editPrescriptionsHealthcareResponse.getStatusCode(),
+    assertEquals(HttpStatus.OK, response.getStatusCode(),
         "Prescription failed to update via PATIENT");
     log.info("(11) Updated prescriptions as HEALTHCARE_PROVIDER");
+  }
 
-    // (12) REVOKE ACCESS HEALTHCARE_PROVIDER
-    Thread.sleep(1000);
-    final String revokeAccessHealthcareUrl =
+  @Test
+  @Order(12)
+  void revokePrescriptionAccessHealthcareProvider() {
+    final String url =
         String.format("%s/users/%s/requests/%s/revoke", baseUrl, patientUser.get("userId"),
             patientUser.get("HC_shareRequestId"));
 
     // create headers
-    HttpHeaders revokeAccessHealthcareHeaders = new HttpHeaders();
-    revokeAccessHealthcareHeaders.set("Authorization", "Bearer " + patientUser.get("JWT"));
-    revokeAccessHealthcareHeaders.setContentType(MediaType.APPLICATION_JSON);
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("Authorization", "Bearer " + patientUser.get("JWT"));
+    headers.setContentType(MediaType.APPLICATION_JSON);
 
-    // POST revoke access
-    HttpEntity<Void> revokeAccessHealthcareEntity =
-        new HttpEntity<>(null, revokeAccessHealthcareHeaders);
+    // create POST request
+    HttpEntity<Void> entity = new HttpEntity<>(null, headers);
+    ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
 
-    ResponseEntity<String> revokeAccessHealthcareResponse =
-        restTemplate.postForEntity(revokeAccessHealthcareUrl, revokeAccessHealthcareEntity,
-            String.class);
-
-    assertEquals(HttpStatus.OK, revokeAccessHealthcareResponse.getStatusCode(),
+    assertEquals(HttpStatus.OK, response.getStatusCode(),
         "Access failed to revoke from HEALTHCARE_PROVIDER to PATIENT");
     log.info("(12) Revoked EDIT access from HEALTHCARE_PROVIDER to PATIENT");
+  }
 
-    // (13) REVOKE ACCESS FIRST_RESPONDER
-    Thread.sleep(1000);
-    final String revokeAccessResponderUrl =
+  @Test
+  @Order(13)
+  void revokePrescriptionAccessFirstResponder() {
+    final String url =
         String.format("%s/users/%s/requests/%s/revoke", baseUrl, patientUser.get("userId"),
             patientUser.get("FR_shareRequestId"));
 
     // create headers
-    HttpHeaders revokeAccessResponderHeaders = new HttpHeaders();
-    revokeAccessResponderHeaders.set("Authorization", "Bearer " + patientUser.get("JWT"));
-    revokeAccessResponderHeaders.setContentType(MediaType.APPLICATION_JSON);
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("Authorization", "Bearer " + patientUser.get("JWT"));
+    headers.setContentType(MediaType.APPLICATION_JSON);
 
-    // POST revoke access
-    HttpEntity<Void> revokeAccessResponderEntity =
-        new HttpEntity<>(null, revokeAccessResponderHeaders);
+    // create POST request
+    HttpEntity<Void> entity = new HttpEntity<>(null, headers);
+    ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
 
-    ResponseEntity<String> revokeAccessResponderResponse =
-        restTemplate.postForEntity(revokeAccessResponderUrl, revokeAccessResponderEntity,
-            String.class);
-
-    assertEquals(HttpStatus.OK, revokeAccessResponderResponse.getStatusCode(),
+    assertEquals(HttpStatus.OK, response.getStatusCode(),
         "Access failed to revoke from FIRST_RESPONDER to PATIENT");
     log.info("(13) Revoked VIEW access from FIRST_RESPONDER to PATIENT");
+  }
 
-    // (14) DELETE CLIENTS
-    List<Map<String, String>> deleteUsers =
-        List.of(patientUser, healthcareUser, firstResponderUser);
+  @Test
+  @Order(14)
+  void deleteClients() {
+    List<Map<String, String>> users = List.of(patientUser, healthcareUser, firstResponderUser);
 
     // register all entities in `users`
-    for (Map<String, String> user : deleteUsers) {
-      Thread.sleep(1000);
-      final String deleteUrl = String.format("%s/users/%s", baseUrl, user.get("userId"));
+    for (Map<String, String> user : users) {
+      final String url = String.format("%s/users/%s", baseUrl, user.get("userId"));
 
       // headers
-      HttpHeaders deleteHeaders = new HttpHeaders();
-      deleteHeaders.set("Authorization", "Bearer " + user.get("JWT"));
-      deleteHeaders.setContentType(MediaType.APPLICATION_JSON);
-      HttpEntity<Void> deleteEntity = new HttpEntity<>(null, deleteHeaders);
+      HttpHeaders headers = new HttpHeaders();
+      headers.set("Authorization", "Bearer " + user.get("JWT"));
+      headers.setContentType(MediaType.APPLICATION_JSON);
+      HttpEntity<Void> entity = new HttpEntity<>(null, headers);
 
       // response
-      ResponseEntity<String> deleteResponse =
-          restTemplate.exchange(deleteUrl, HttpMethod.DELETE, deleteEntity,
-              new ParameterizedTypeReference<String>() {
-              });
-      String responseBody = (String) deleteResponse.getBody();
+      ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.DELETE, entity,
+          new ParameterizedTypeReference<String>() {
+          });
+      String responseBody = (String) response.getBody();
 
       // asserts
       assertEquals("User deleted successfully", responseBody);
-      assertEquals(HttpStatus.OK, deleteResponse.getStatusCode(),
+      assertEquals(HttpStatus.OK, response.getStatusCode(),
           "Client deletion failed for " + user.get("email"));
       log.info("(14) Deleted client: {}", user.get("email"));
     }

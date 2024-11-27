@@ -3,5 +3,5 @@ entrypoint: java -Dspring.profiles.active=staging -jar target/pharmaid-0.0.1-SNA
 runtime: java17
 instance_class: F2
 automatic_scaling:
-  min_instances: 1
+  min_instances: 2
   max_instances: 10
