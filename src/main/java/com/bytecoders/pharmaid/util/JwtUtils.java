@@ -58,7 +58,8 @@ public class JwtUtils {
         "/login",
         "/register",
         "/pharmaid-api-docs",
-        "/pharmaid-api-docs-ui.html"};
+        "/pharmaid-api-docs-ui.html",
+        "/swagger-ui/index.html"};
   }
 
   private boolean isTokenExpired(String token) {
