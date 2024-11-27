@@ -47,6 +47,16 @@ public class PharmaidController {
   private static final String PRESCRIPTION_ID = "prescriptionId";
 
   /**
+   * Basic warmup endpoint for App Engine.
+   *
+   * @return A String
+   */
+  @GetMapping("/_ah/warmup")
+  public String warmup() {
+    return index();
+  }
+
+  /**
    * Basic hello endpoint for testing.
    *
    * @return A String
