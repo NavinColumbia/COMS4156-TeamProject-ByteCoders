@@ -41,7 +41,7 @@ jobs:
         with:
           project_id: ${{ vars.GCP_PROJECT_ID }}
           version: main
-          deliverables: AppEngine/app-staging.yaml
+          deliverables: app-staging.yaml
           flags: --no-cache
 
       - name: Run All Tests
