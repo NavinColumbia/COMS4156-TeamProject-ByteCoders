@@ -25,8 +25,10 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -37,6 +39,7 @@ import org.springframework.web.server.ResponseStatusException;
 /**
  * This class represents a set of unit tests for {@code PharmaidController} class.
  */
+@Slf4j
 @WebMvcTest(PharmaidController.class)
 public class PharmaidControllerTests {
 
@@ -125,7 +128,7 @@ public class PharmaidControllerTests {
   }
 
   /**
-   * Test for successfully deleting a user
+   * Test for successfully deleting a user.
    */
   @Test
   public void deleteUserSuccess() {
@@ -146,7 +149,7 @@ public class PharmaidControllerTests {
   }
 
   /**
-   * Test for deleting a user that does not exist
+   * Test for deleting a user that does not exist.
    */
   @Test
   public void deleteUserInvalidUser() {
@@ -294,8 +297,8 @@ public class PharmaidControllerTests {
     when(prescriptionService.updatePrescription(any(Prescription.class))).thenReturn(
         updatedPrescription);
 
-    ResponseEntity<?> response = testController.updateUsersPrescription(userId, prescriptionId,
-        request);
+    ResponseEntity<?> response =
+        testController.updateUsersPrescription(userId, prescriptionId, request);
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertEquals(updatedPrescription, response.getBody());
   }
@@ -336,7 +339,7 @@ public class PharmaidControllerTests {
   }
 
   /**
-   * Test for updating a prescription with invalid prescription/user combo
+   * Test for updating a prescription with invalid prescription/user combo.
    */
   @Test
   public void updatePrescriptionInvalidPrescriptionUserCombo() {
@@ -358,15 +361,15 @@ public class PharmaidControllerTests {
     request.setEndDate(new Date());
     request.setIsActive(true);
 
-    final ResponseEntity<?> updatedPrescription = testController.updateUsersPrescription(userId,
-        prescriptionId, request);
+    final ResponseEntity<?> updatedPrescription =
+        testController.updateUsersPrescription(userId, prescriptionId, request);
     assertEquals(updatedPrescription.getStatusCode(), HttpStatus.NOT_FOUND);
     assertEquals(updatedPrescription.getBody(),
         "Provided prescription/user combination doesn't exist");
   }
 
   /**
-   * Test for updating a user's prescriptions with an invalid update request
+   * Test for updating a user's prescriptions with an invalid update request.
    */
   @Test
   public void updateUserPrescripionInvalidRequest() {
@@ -374,14 +377,14 @@ public class PharmaidControllerTests {
     String prescriptionId = "prescriptionId";
     UpdatePrescriptionRequest request = new UpdatePrescriptionRequest();
 
-    final ResponseEntity<?> updatedPrescription = testController.updateUsersPrescription(userId,
-        prescriptionId, request);
+    final ResponseEntity<?> updatedPrescription =
+        testController.updateUsersPrescription(userId, prescriptionId, request);
     assertEquals(HttpStatus.BAD_REQUEST, updatedPrescription.getStatusCode());
     assertEquals("Invalid update request", updatedPrescription.getBody());
   }
 
   /**
-   * Test for successfully deleting a user's prescription
+   * Test for successfully deleting a user's prescription.
    */
   @Test
   public void removePrescriptionSuccess() {
@@ -399,15 +402,15 @@ public class PharmaidControllerTests {
     when(userService.getUser(userId)).thenReturn(mockUser);
     when(prescriptionService.getPrescription(prescriptionId)).thenReturn(mockPrescription);
 
-    final ResponseEntity<?> deletedPrescription = testController.removePrescription(userId,
-        prescriptionId);
+    final ResponseEntity<?> deletedPrescription =
+        testController.removePrescription(userId, prescriptionId);
     assertEquals(HttpStatus.OK, deletedPrescription.getStatusCode());
     assertEquals("Prescription removed.", deletedPrescription.getBody());
   }
 
 
   /**
-   * Test for failed remove prescription operation due to invalid user
+   * Test for failed remove prescription operation due to invalid user.
    */
   @Test
   public void removePrescriptionInvalidUser() {
@@ -433,7 +436,7 @@ public class PharmaidControllerTests {
   }
 
   /**
-   * Test for failed remove prescription operation due to invalid prescription
+   * Test for failed remove prescription operation due to invalid prescription.
    */
   @Test
   public void removePrescriptionInvalidPrescription() {
@@ -460,7 +463,7 @@ public class PharmaidControllerTests {
 
   /**
    * Test for failure to remove prescription operation because prescription does not exist for the
-   * provided user
+   * provided user.
    */
   @Test
   public void removePrescriptionInvalidUserPrescriptionCombo() {
@@ -480,15 +483,15 @@ public class PharmaidControllerTests {
     when(prescriptionService.getPrescription(prescriptionId)).thenReturn(mockPrescription);
     when(userService.getUser(userId)).thenReturn(mockUser);
 
-    ResponseEntity<?> removedPrescription = testController.removePrescription(userId,
-        prescriptionId);
+    ResponseEntity<?> removedPrescription =
+        testController.removePrescription(userId, prescriptionId);
     assertEquals(HttpStatus.NOT_FOUND, removedPrescription.getStatusCode());
     assertEquals("Provided prescription/user combination doesn't exist",
         removedPrescription.getBody());
   }
 
   /**
-   * Test for removing a user's prescription without permission
+   * Test for removing a user's prescription without permission.
    */
   @Test
   void removePrescriptionWithoutPermission() {
@@ -577,6 +580,15 @@ public class PharmaidControllerTests {
     assertEquals(String.format("Provided userId does not exist: %s", userId),
         exception.getReason());
   }
+
+  @Test
+  void testControllerActiveProfile() {
+    log.info("PharmaidControllerTests active Spring profile: {}", activeProfile);
+    assertEquals("staging", activeProfile);
+  }
+
+  @Value("${spring.profiles.active}")
+  private String activeProfile;
 
   @MockBean
   private UserService userService;

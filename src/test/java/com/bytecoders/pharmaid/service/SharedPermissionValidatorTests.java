@@ -3,6 +3,7 @@ package com.bytecoders.pharmaid.service;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -348,11 +349,12 @@ public class SharedPermissionValidatorTests {
         sharedPermissionRepository.findFirstByOwnerAndRequesterAndSharePermissionTypeInAndStatusIn(
             eq(owner), eq(requester), any(), any())).thenReturn(Optional.of(permission));
 
-    IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-        () -> permissionValidator.validateExistingPermission(owner, requester,
-            SharePermissionType.VIEW));
+    Optional<SharedPermission> result =
+        permissionValidator.validateExistingPermission(owner, requester,
+            SharePermissionType.VIEW);
 
-    assertEquals("A PENDING share request already exists", exception.getMessage());
+    assertTrue(result.isPresent(), "Expected existing PENDING permission");
+    assertEquals(permission, result.get(), "Returned permission should match the existing one");
   }
 
   @Test
@@ -364,11 +366,12 @@ public class SharedPermissionValidatorTests {
         sharedPermissionRepository.findFirstByOwnerAndRequesterAndSharePermissionTypeInAndStatusIn(
             eq(owner), eq(requester), any(), any())).thenReturn(Optional.of(permission));
 
-    IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-        () -> permissionValidator.validateExistingPermission(owner, requester,
-            SharePermissionType.VIEW));
+    Optional<SharedPermission> result =
+        permissionValidator.validateExistingPermission(owner, requester,
+            SharePermissionType.VIEW);
 
-    assertEquals("The owner has already accepted this share request", exception.getMessage());
+    assertTrue(result.isPresent(), "Expected existing ACCEPT permission");
+    assertEquals(permission, result.get(), "Returned permission should match the existing one");
   }
 
   @Test
@@ -383,7 +386,7 @@ public class SharedPermissionValidatorTests {
   }
 
   @Test
-  void checkForHigherAccessPermission_Failure_EditAccessExists() {
+  void checkForHigherAccessPermission_Success_EditAccessExists() {
     permission.setStatus(ShareRequestStatus.ACCEPT);
 
     // EDIT access exists
@@ -391,10 +394,11 @@ public class SharedPermissionValidatorTests {
         eq(owner), eq(requester), eq(SharePermissionType.EDIT),
         eq(ShareRequestStatus.ACCEPT))).thenReturn(Optional.of(permission));
 
-    IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-        () -> permissionValidator.checkForHigherAccessPermission(owner, requester));
+    Optional<SharedPermission> result =
+        permissionValidator.checkForHigherAccessPermission(owner, requester);
 
-    assertEquals("Requester already has EDIT access", exception.getMessage());
+    assertTrue(result.isPresent(), "Expected existing EDIT access permission");
+    assertEquals(permission, result.get(), "Returned permission should match the existing one");
   }
 
   @Test

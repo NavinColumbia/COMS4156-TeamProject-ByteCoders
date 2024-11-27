@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 
 
 /**
- * Service operations around {@link com.bytecoders.pharmaid.repository.model.Prescription}.
+ * Service operations around {@link Prescription}.
  */
 @Slf4j
 @Service
@@ -72,7 +72,7 @@ public class PrescriptionService {
    * @param prescriptionId the prescription ID
    */
   public void deletePrescription(String prescriptionId) {
-    if(getPrescription(prescriptionId) != null) {
+    if (getPrescription(prescriptionId) != null) {
       prescriptionRepository.deleteById(prescriptionId);
     }
   }

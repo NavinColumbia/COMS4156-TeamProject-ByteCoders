@@ -120,7 +120,7 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-        
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
@@ -163,16 +163,30 @@
             <artifactId>swagger-annotations</artifactId>
             <version>2.2.25</version>
         </dependency>
+
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+            <version>5.4.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.httpcomponents.core5</groupId>
+            <artifactId>httpcore5</artifactId>
+            <version>5.3.1</version>
+        </dependency>
+
     </dependencies>
 
     <build>
         <plugins>
+
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
@@ -204,18 +218,33 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <executions>
                     <execution>
+                        <id>prepare-agent</id>
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
                     </execution>
                     <execution>
+                        <id>report-test</id>
                         <goals>
                             <goal>report</goal>
                         </goals>
-                        <id>report</id>
+                        <phase>test</phase>
+                    </execution>
+                    <execution>
+                        <id>report-verify</id>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
                         <phase>verify</phase>
                     </execution>
                 </executions>
+                <configuration>
+                    <!-- Exclude OpenAPI generated classes from Jacoco -->
+                    <excludes>
+                        <exclude>org/openapitools/api/**</exclude>
+                        <exclude>com/bytecoders/pharmaid/openapi/model/**</exclude>
+                    </excludes>
+                </configuration>
                 <groupId>org.jacoco</groupId>
                 <version>0.8.11</version>
             </plugin>
@@ -338,6 +367,38 @@
                 </executions>
             </plugin>
 
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.2</version>
+                <configuration>
+                    <includes>
+                        <include>**/*Tests.java</include>
+                    </includes>
+                    <excludes>
+                        <exclude>**/*IntegrationTests.java</exclude>
+                    </excludes>
+                    <systemPropertyVariables>
+                        <spring.profiles.active>staging</spring.profiles.active>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>3.5.2</version>
+                <configuration>
+                    <includes>
+                        <include>**/*IntegrationTests.java</include>
+                    </includes>
+                    <systemPropertyVariables>
+                        <spring.profiles.active>staging</spring.profiles.active>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+
         </plugins>
     </build>
+
 </project>

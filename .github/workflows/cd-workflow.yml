@@ -31,4 +31,4 @@ jobs:
           project_id: ${{ steps.auth.outputs.project_id }}
           version: main
           flags: --no-cache
-          deliverables: app.yaml
+          deliverables: AppEngine/app-prod.yaml

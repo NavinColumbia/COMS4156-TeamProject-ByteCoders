@@ -30,12 +30,9 @@ public class JwtUtils {
    * @return signed JWT as a String, with userId as the subject.
    */
   public String generateToken(String userId) {
-    return Jwts.builder()
-        .setSubject(userId)
-        .setIssuedAt(new Date(System.currentTimeMillis()))
+    return Jwts.builder().setSubject(userId).setIssuedAt(new Date(System.currentTimeMillis()))
         .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
-        .signWith(getSignInKey(), SignatureAlgorithm.HS256)
-        .compact();
+        .signWith(getSignInKey(), SignatureAlgorithm.HS256).compact();
   }
 
   public String extractUserId(String token) {
@@ -47,11 +44,21 @@ public class JwtUtils {
   }
 
   private Claims getClaims(String token) {
-    return Jwts.parserBuilder()
-        .setSigningKey(getSignInKey())
-        .build()
-        .parseClaimsJws(token)
+    return Jwts.parserBuilder().setSigningKey(getSignInKey()).build().parseClaimsJws(token)
         .getBody();
+  }
+
+  /**
+   * Define public endpoints that do not require authentication.
+   *
+   * @return an array of public endpoints
+   */
+  public String[] getPublicEndpoints() {
+    return new String[]{"/hello",
+        "/login",
+        "/register",
+        "/pharmaid-api-docs",
+        "/pharmaid-api-docs-ui.html"};
   }
 
   private boolean isTokenExpired(String token) {
@@ -67,8 +74,7 @@ public class JwtUtils {
    * Fetches logged-in user.
    */
   public String getLoggedInUserId() {
-    org.springframework.security.core.Authentication
-        authentication =
+    org.springframework.security.core.Authentication authentication =
         SecurityContextHolder.getContext().getAuthentication();
     if (authentication != null) {
       return (String) authentication.getPrincipal();

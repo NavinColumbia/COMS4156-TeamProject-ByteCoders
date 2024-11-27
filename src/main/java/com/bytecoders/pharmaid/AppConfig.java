@@ -1,6 +1,7 @@
 package com.bytecoders.pharmaid;
 
 import com.bytecoders.pharmaid.security.JwtRequestFilter;
+import com.bytecoders.pharmaid.util.JwtUtils;
 import com.bytecoders.pharmaid.util.PasswordUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -19,6 +20,9 @@ public class AppConfig {
   @Autowired
   private JwtRequestFilter jwtRequestFilter;
 
+  @Autowired
+  private JwtUtils jwtUtils;
+
   @Bean
   public PasswordUtils passwordUtils() {
     return new PasswordUtils();
@@ -35,7 +39,7 @@ public class AppConfig {
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http.csrf(csrf -> csrf.disable()).authorizeHttpRequests(auth -> {
-      auth.requestMatchers("/hello", "/login", "/register").permitAll();
+      auth.requestMatchers(jwtUtils.getPublicEndpoints()).permitAll();
       auth.anyRequest().authenticated();
     }).sessionManagement(
         session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));

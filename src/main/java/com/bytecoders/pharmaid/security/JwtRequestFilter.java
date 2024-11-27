@@ -36,6 +36,15 @@ public class JwtRequestFilter extends OncePerRequestFilter {
       HttpServletRequest request, HttpServletResponse response, FilterChain chain)
       throws ServletException, IOException {
 
+    // Skip JWT validation for public endpoints
+    String requestUri = request.getRequestURI();
+    for (String endpoint : jwtUtils.getPublicEndpoints()) {
+      if (requestUri.equals(endpoint)) {
+        chain.doFilter(request, response);
+        return;
+      }
+    }
+
     final String jwt = extractJwtFromHeader(request);
     final String userId = extractUserIdFromJwt(jwt);
 
@@ -52,7 +61,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
    * @param request HTTP request with Auth header
    * @return if present, JWT token as a String prefixed with "Bearer "; else null
    */
-  private String extractJwtFromHeader(HttpServletRequest request) {
+  public String extractJwtFromHeader(HttpServletRequest request) {
     String authHeader = request.getHeader("Authorization");
     if (authHeader != null && authHeader.startsWith("Bearer ")) {
       return authHeader.substring(7); // remove "Bearer " prefix
@@ -60,7 +69,12 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     return null; // No valid JWT found
   }
 
-  private String extractUserIdFromJwt(String jwt) {
+  /**
+   * Extracts the userId from JWT token to utilize in other JWT request methods.
+   *
+   * @return userId
+   */
+  public String extractUserIdFromJwt(String jwt) {
     if (jwt != null) {
       return jwtUtils.extractUserId(jwt);
     }
@@ -72,7 +86,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
    *
    * @return true if no authentication is present; else false
    */
-  private boolean isAuthenticationNull() {
+  public boolean isAuthenticationNull() {
     return SecurityContextHolder.getContext().getAuthentication() == null;
   }
 
@@ -82,7 +96,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
    * @param userId  userId
    * @param request HTTP request to build auth details
    */
-  private void setUpAuthentication(String userId, HttpServletRequest request) {
+  public void setUpAuthentication(String userId, HttpServletRequest request) {
     UsernamePasswordAuthenticationToken authToken =
         new UsernamePasswordAuthenticationToken(userId, null, new java.util.ArrayList<>());
 

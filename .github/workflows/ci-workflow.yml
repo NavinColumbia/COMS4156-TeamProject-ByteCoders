@@ -33,5 +33,16 @@ jobs:
           distribution: 'oracle'
           cache: maven
 
-      - name: Build and Test
-        run: mvn clean install
+      - name: Build and Run Unit Tests
+        run: mvn clean install -DskipITs
+
+      - name: Deploy Staging Service
+        uses: google-github-actions/deploy-appengine@v2
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          version: main
+          deliverables: AppEngine/app-staging.yaml
+          flags: --no-cache
+
+      - name: Run All Tests
+        run: mvn verify

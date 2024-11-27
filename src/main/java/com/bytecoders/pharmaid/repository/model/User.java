@@ -23,7 +23,7 @@ public class User {
   @Id
   @UuidGenerator
   @JsonProperty
-  @Column(name = "user_id", columnDefinition = "UUID")
+  @Column(name = "user_id")
   private String id;
 
   @Column(name = "email", nullable = false, unique = true)
