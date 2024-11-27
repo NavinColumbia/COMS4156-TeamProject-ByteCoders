@@ -34,7 +34,7 @@ jobs:
           cache: maven
 
       - name: Build and Run Unit Tests
-        run: mvn clean install -DskipITs
+        run: rm -rf ~/.m2/repository && mvn clean install -DskipITs
 
       - name: Deploy Staging Service
         uses: google-github-actions/deploy-appengine@v2
