@@ -33,6 +33,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.client.RestTemplate;
+import org.junit.jupiter.api.AfterEach;
 
 @Slf4j
 @SpringBootTest
@@ -96,6 +97,11 @@ class PharmaidIntegrationTests {
     firstResponderUser.put("userType", "FIRST_RESPONDER");
   }
 
+  @AfterEach
+  void pauseBetweenTests() throws InterruptedException {
+    Thread.sleep(1000);
+  }
+
   @Test
   @Order(1)
   void integrationTestActiveProfile_Success() {
@@ -116,7 +122,7 @@ class PharmaidIntegrationTests {
 
   @Test
   @Order(3)
-  void registerClients() {
+  void registerClients() throws InterruptedException {
     List<Map<String, String>> users = List.of(patientUser, healthcareUser, firstResponderUser);
 
     // register all entities in `users`
@@ -138,12 +144,13 @@ class PharmaidIntegrationTests {
           "Login failed for " + user.get("email"));
 
       log.info("(3) Registered {}", user.get("userType"));
+      Thread.sleep(1000);
     }
   }
 
   @Test
   @Order(4)
-  void loginClients() {
+  void loginClients() throws InterruptedException {
     List<Map<String, String>> users = List.of(patientUser, healthcareUser, firstResponderUser);
 
     // register all entities in `users`
@@ -171,8 +178,9 @@ class PharmaidIntegrationTests {
 
       user.put("userId", responseBody.get("userId"));
       user.put("JWT", responseBody.get("token"));
-      log.info("(4) Logged in {}", responseBody.get("userType"));
+      log.info("(4) Logged in {}", user.get("userType"));
       log.info("(4) {} JWT: {}", user.get("userType"), user.get("JWT"));
+      Thread.sleep(1000);
     }
   }
 
@@ -431,7 +439,7 @@ class PharmaidIntegrationTests {
 
   @Test
   @Order(14)
-  void deleteClients() {
+  void deleteClients() throws InterruptedException {
     List<Map<String, String>> users = List.of(patientUser, healthcareUser, firstResponderUser);
 
     // register all entities in `users`
@@ -455,6 +463,7 @@ class PharmaidIntegrationTests {
       assertEquals(HttpStatus.OK, response.getStatusCode(),
           "Client deletion failed for " + user.get("email"));
       log.info("(14) Deleted client: {}", user.get("email"));
+      Thread.sleep(1000);
     }
   }
 }
