@@ -99,18 +99,18 @@ class PharmaidIntegrationTests {
   @Test
   @Order(1)
   void integrationTestActiveProfile_Success() {
-    log.info("FullIntegrationTests active Spring profile: {}", activeProfile);
+    log.info("(1) FullIntegrationTests active Spring profile: {}", activeProfile);
     assertEquals("staging", activeProfile);
   }
 
   @Test
   @Order(2)
   void helloEndpoint_Success() {
-    log.info("Testing /hello endpoint...");
+    log.info("(2) Testing /hello endpoint...");
     String url = baseUrl + "/hello";
     ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
 
-    log.info("Response from /hello: {}", response.getBody());
+    log.info("(2) Response from /hello: {}", response.getBody());
     assertEquals(HttpStatus.OK, response.getStatusCode(), "Unexpected HTTP status from /hello");
     assertEquals("Hello :)", response.getBody(), "Unexpected response body from /hello");
   }
@@ -118,12 +118,12 @@ class PharmaidIntegrationTests {
   @Test
   @Order(3)
   void registerClients() {
-    log.info("Register a PATIENT, HEALTHCARE_PROVIDER, and FIRST_RESPONDER client...");
+    log.info("(3) Register a PATIENT, HEALTHCARE_PROVIDER, and FIRST_RESPONDER client...");
     List<Map<String, String>> users = List.of(patientUser, healthcareUser, firstResponderUser);
 
     // register all entities in `users`
     for (Map<String, String> user : users) {
-      log.info("Registering a client with userType: {}", user.get("userType"));
+      log.info("(3) Registering a client with userType: {}", user.get("userType"));
 
       String url = baseUrl + "/register";
       HttpEntity<Map<String, String>> entity = new HttpEntity<>(user, null);
@@ -141,24 +141,24 @@ class PharmaidIntegrationTests {
       assertEquals(HttpStatus.CREATED, response.getStatusCode(),
           "Login failed for " + user.get("email"));
 
-      log.info("Registered user with ID: {}", responseBody.get("id"));
+      log.info("(3) Registered user with ID: {}", responseBody.get("id"));
     }
   }
 
   @Test
   @Order(4)
   void loginClients() {
-    log.info("Login a PATIENT, HEALTHCARE_PROVIDER, and FIRST_RESPONDER client...");
+    log.info("(4) Login a PATIENT, HEALTHCARE_PROVIDER, and FIRST_RESPONDER client...");
     List<Map<String, String>> users = List.of(patientUser, healthcareUser, firstResponderUser);
 
     // register all entities in `users`
     for (Map<String, String> user : users) {
-      log.info("Login a client with email: {}", user.get("email"));
+      log.info("(4) Login a client with email: {}", user.get("email"));
 
       Map<String, String> loginRequest = new HashMap<>();
       loginRequest.put("email", user.get("email"));
       loginRequest.put("password", user.get("password"));
-      log.info("Login request body: {}", loginRequest);
+      log.info("(4) Login request body: {}", loginRequest);
 
       String url = baseUrl + "/login";
       HttpEntity<Map<String, String>> entity = new HttpEntity<>(loginRequest, null);
@@ -177,7 +177,7 @@ class PharmaidIntegrationTests {
       assertEquals(HttpStatus.OK, response.getStatusCode(),
           "Login failed for " + user.get("email"));
 
-      log.info("Logged in user with ID: {}", responseBody.get("userId"));
+      log.info("(4) Logged in user with ID: {}", responseBody.get("userId"));
       user.put("userId", responseBody.get("userId"));
       user.put("JWT", responseBody.get("token"));
     }
@@ -214,7 +214,7 @@ class PharmaidIntegrationTests {
     assertEquals(HttpStatus.CREATED, response.getStatusCode(),
         "VIEW access request failed for " + firstResponderUser.get("email")
             + " to request access to patient records of " + patientUser.get("email"));
-    log.info("Created FIRST_RESPONDER shareRequestId: {}", (String) responseBody.get("id"));
+    log.info("(5) Created FIRST_RESPONDER shareRequestId: {}", (String) responseBody.get("id"));
   }
 
   @Test
@@ -251,7 +251,7 @@ class PharmaidIntegrationTests {
         "EDIT access request failed for " + healthcareUser.get("email")
             + " to request access to patient records of " + patientUser.get("email"));
 
-    log.info("Created HEALTHCARE_PROVIDER shareRequestId: {}", responseBody.get("id"));
+    log.info("(6) Created HEALTHCARE_PROVIDER shareRequestId: {}", responseBody.get("id"));
   }
 
   @Test
@@ -286,7 +286,7 @@ class PharmaidIntegrationTests {
 
     Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
     patientUser.put("prescriptionId", (String) responseBody.get("id"));
-    log.info("Created patient prescriptionId: {}", responseBody.get("id"));
+    log.info("(7) Created patient prescriptionId: {}", responseBody.get("id"));
   }
 
   @Test
@@ -312,7 +312,7 @@ class PharmaidIntegrationTests {
         "Share request accept with HEALTHCARE_PROVIDER failed for " + patientUser.get("email"));
 
     Map<String, Object> responseBody = response.getBody();
-    log.info("Accepted share request: {}", responseBody.get("id"));
+    log.info("(8) Accepted share request: {}", responseBody.get("id"));
   }
 
   @Test
@@ -335,7 +335,7 @@ class PharmaidIntegrationTests {
 
     assertEquals(HttpStatus.OK, response.getStatusCode(),
         "Prescription VIEW via FIRST_RESPONDER failed");
-    log.info("Viewed prescriptions of user: {}", patientUser.get("userId"));
+    log.info("(9) Viewed prescriptions of user: {}", patientUser.get("userId"));
   }
 
   @Test
@@ -363,7 +363,7 @@ class PharmaidIntegrationTests {
 
     assertEquals(HttpStatus.OK, response.getStatusCode(),
         "Prescription failed to update via PATIENT");
-    log.info("Updated prescriptions as PATIENT of user: {}", patientUser.get("userId"));
+    log.info("(10) Updated prescriptions as PATIENT of user: {}", patientUser.get("userId"));
   }
 
   @Test
@@ -391,7 +391,7 @@ class PharmaidIntegrationTests {
 
     assertEquals(HttpStatus.OK, response.getStatusCode(),
         "Prescription failed to update via PATIENT");
-    log.info("Updated prescriptions as HEALTHCARE_PROVIDER of user: {}",
+    log.info("(11) Updated prescriptions as HEALTHCARE_PROVIDER of user: {}",
         patientUser.get("userId"));
   }
 
@@ -413,7 +413,7 @@ class PharmaidIntegrationTests {
 
     assertEquals(HttpStatus.OK, response.getStatusCode(),
         "Access failed to revoke from HEALTHCARE_PROVIDER to PATIENT");
-    log.info("Revoked EDIT access from HEALTHCARE_PROVIDER to PATIENT of user: {}",
+    log.info("(12) Revoked EDIT access from HEALTHCARE_PROVIDER to PATIENT of user: {}",
         patientUser.get("userId"));
   }
 
@@ -435,20 +435,20 @@ class PharmaidIntegrationTests {
 
     assertEquals(HttpStatus.OK, response.getStatusCode(),
         "Access failed to revoke from FIRST_RESPONDER to PATIENT");
-    log.info("Revoked VIEW access from FIRST_RESPONDER to PATIENT of user: {}",
+    log.info("(13) Revoked VIEW access from FIRST_RESPONDER to PATIENT of user: {}",
         patientUser.get("userId"));
   }
 
   @Test
   @Order(14)
   void deleteClients() {
-    log.info("Delete a PATIENT, HEALTHCARE_PROVIDER, and FIRST_RESPONDER client...");
+    log.info("(14) Delete a PATIENT, HEALTHCARE_PROVIDER, and FIRST_RESPONDER client...");
     List<Map<String, String>> users = List.of(patientUser, healthcareUser, firstResponderUser);
 
     // register all entities in `users`
     for (Map<String, String> user : users) {
       final String url = String.format("%s/users/%s", baseUrl, user.get("userId"));
-      log.info("Delete a client with email: {}", user.get("email"));
+      log.info("(14) Delete a client with email: {}", user.get("email"));
 
       // headers
       HttpHeaders headers = new HttpHeaders();
@@ -466,8 +466,7 @@ class PharmaidIntegrationTests {
       assertEquals("User deleted successfully", responseBody);
       assertEquals(HttpStatus.OK, response.getStatusCode(),
           "Client deletion failed for " + user.get("email"));
-      log.info("Client deleted: {}", user.get("userId"));
+      log.info("(14) Client deleted: {}", user.get("userId"));
     }
   }
-
 }

@@ -45,4 +45,4 @@ jobs:
           flags: --no-cache
 
       - name: Run All Tests
-        run: mvn clean install
+        run: mvn clean verify
