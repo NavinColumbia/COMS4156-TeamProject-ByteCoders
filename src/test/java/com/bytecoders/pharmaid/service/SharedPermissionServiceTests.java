@@ -92,7 +92,7 @@ public class SharedPermissionServiceTests {
     assertEquals(permission.getSharePermissionType(), result.getSharePermissionType());
     assertEquals(permission.getStatus(), result.getStatus());
     verify(permissionValidator).validateCreateShareRequestSetup(owner, requester,
-        SharePermissionType.VIEW, requester.getId());
+        SharePermissionType.VIEW);
     verify(sharedPermissionRepository).save(any(SharedPermission.class));
   }
 
@@ -105,14 +105,14 @@ public class SharedPermissionServiceTests {
     // ACCEPT share action
     SharedPermission result =
         sharedPermissionService.shareRequestAction(owner.getId(), permission.getId(),
-            ShareRequestStatus.ACCEPT, owner.getId());
+            ShareRequestStatus.ACCEPT);
 
     // assertions and verify
     assertNotNull(result);
     assertEquals(ShareRequestStatus.ACCEPT, result.getStatus());
     assertEquals(permission, result);
     verify(permissionValidator).validateShareRequestAction(permission, owner.getId(),
-        ShareRequestStatus.ACCEPT, owner.getId());
+        ShareRequestStatus.ACCEPT);
     verify(sharedPermissionRepository).save(permission);
   }
 
@@ -125,14 +125,14 @@ public class SharedPermissionServiceTests {
     // DENY share action
     SharedPermission result =
         sharedPermissionService.shareRequestAction(owner.getId(), permission.getId(),
-            ShareRequestStatus.DENY, owner.getId());
+            ShareRequestStatus.DENY);
 
     // assertions and verify
     assertNotNull(result);
     assertEquals(ShareRequestStatus.DENY, result.getStatus());
     assertEquals(permission, result);
     verify(permissionValidator).validateShareRequestAction(permission, owner.getId(),
-        ShareRequestStatus.DENY, owner.getId());
+        ShareRequestStatus.DENY);
     verify(sharedPermissionRepository).save(permission);
   }
 
@@ -144,18 +144,17 @@ public class SharedPermissionServiceTests {
     doThrow(
         new IllegalArgumentException("Cannot choose PENDING as a share action response")).when(
             permissionValidator)
-        .validateShareRequestAction(permission, owner.getId(), ShareRequestStatus.PENDING,
-            owner.getId());
+        .validateShareRequestAction(permission, owner.getId(), ShareRequestStatus.PENDING);
 
     IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
       sharedPermissionService.shareRequestAction(owner.getId(), permission.getId(),
-          ShareRequestStatus.PENDING, owner.getId());
+          ShareRequestStatus.PENDING);
     });
 
     // assertions and verify
     assertEquals("Cannot choose PENDING as a share action response", exception.getMessage());
     verify(permissionValidator).validateShareRequestAction(permission, owner.getId(),
-        ShareRequestStatus.PENDING, owner.getId());
+        ShareRequestStatus.PENDING);
     verify(sharedPermissionRepository, never()).save(any());
   }
 
@@ -166,13 +165,11 @@ public class SharedPermissionServiceTests {
         eq(sharedPermissionRepository))).thenReturn(permission);
 
     doNothing().when(permissionValidator)
-        .validateRevokeSharePermission(permission, owner.getId(), owner.getId());
+        .validateRevokeSharePermission(permission, owner.getId());
 
-    sharedPermissionService.revokeSharingPermission(owner.getId(), permission.getId(),
-        owner.getId());
+    sharedPermissionService.revokeSharingPermission(owner.getId(), permission.getId());
 
-    verify(permissionValidator).validateRevokeSharePermission(permission, owner.getId(),
-        owner.getId());
+    verify(permissionValidator).validateRevokeSharePermission(permission, owner.getId());
     verify(sharedPermissionRepository).delete(permission);
   }
 
@@ -183,12 +180,10 @@ public class SharedPermissionServiceTests {
 
     doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN,
         "Not authorized to act on this request")).when(permissionValidator)
-        .validateRevokeSharePermission(eq(permission), eq(nonExistentUserId),
-            eq(nonExistentUserId));
+        .validateRevokeSharePermission(eq(permission), eq(nonExistentUserId));
 
     ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
-      sharedPermissionService.revokeSharingPermission(nonExistentUserId, permission.getId(),
-          nonExistentUserId);
+      sharedPermissionService.revokeSharingPermission(nonExistentUserId, permission.getId());
     });
 
     assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
@@ -203,18 +198,15 @@ public class SharedPermissionServiceTests {
     // throw exception when attempting to revoke PENDING share request
     doThrow(
         new IllegalArgumentException("Can only revoke already accepted shared permissions")).when(
-            permissionValidator)
-        .validateRevokeSharePermission(permission, owner.getId(), owner.getId());
+        permissionValidator).validateRevokeSharePermission(permission, owner.getId());
 
     IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-      sharedPermissionService.revokeSharingPermission(owner.getId(), permission.getId(),
-          owner.getId());
+      sharedPermissionService.revokeSharingPermission(owner.getId(), permission.getId());
     });
 
     // assertions and verify
     assertEquals("Can only revoke already accepted shared permissions", exception.getMessage());
-    verify(permissionValidator).validateRevokeSharePermission(permission, owner.getId(),
-        owner.getId());
+    verify(permissionValidator).validateRevokeSharePermission(permission, owner.getId());
     verify(sharedPermissionRepository, never()).delete(any());
   }
 }

@@ -1,5 +1,3 @@
-
-
 package com.bytecoders.pharmaid.service;
 
 import com.bytecoders.pharmaid.openapi.model.SharePermissionType;
@@ -8,6 +6,7 @@ import com.bytecoders.pharmaid.openapi.model.UserType;
 import com.bytecoders.pharmaid.repository.SharedPermissionRepository;
 import com.bytecoders.pharmaid.repository.model.SharedPermission;
 import com.bytecoders.pharmaid.repository.model.User;
+import com.bytecoders.pharmaid.util.JwtUtils;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -16,9 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-/**
- * Helper methods to validate all input in SharedPermissionService.
- */
+/** Helper methods to validate all input in SharedPermissionService. */
 @Slf4j
 @Service
 public class SharedPermissionValidator {
@@ -29,6 +26,8 @@ public class SharedPermissionValidator {
   @Autowired
   private UserService userService;
 
+  @Autowired
+  private JwtUtils jwtUtils;
 
   /**
    * Checks if current user can EDIT another user's records.
@@ -95,7 +94,8 @@ public class SharedPermissionValidator {
    * Checks if the logged in user has permissions to perform a sharing action.
    *
    * @param loggedInUserId the logged in user
-   * @param userId         the user needing proper permissions for creating or acting on a request
+   * @param userId         the user needing proper permissions for creating or acting on a
+   *                       request
    */
   public void validateLoggedInUser(String loggedInUserId, String userId) {
     if (!loggedInUserId.equals(userId)) {
@@ -147,18 +147,23 @@ public class SharedPermissionValidator {
    * @param owner          the {@link User} who owns the records being shared
    * @param requester      the {@link User} requesting access to the records
    * @param permissionType the type of share permission being requested
-   * @throws IllegalArgumentException if PENDING/ACCEPT share request exists or requester already
-   *                                  has higher-level EDIT access
+   * @return if a permission exists, return permission; else empty return
    */
-  public void validateCreateShareRequestAttributes(
+  public Optional<SharedPermission> validateCreateShareRequestAttributes(
       User owner, User requester, SharePermissionType permissionType) {
+
     // Validate existing share requests for the provided permissionType
-    validateExistingPermission(owner, requester, permissionType);
+    Optional<SharedPermission> existingPermission =
+        validateExistingPermission(owner, requester, permissionType);
+    if (existingPermission.isPresent()) {
+      return existingPermission;
+    }
 
     // Check for higher-level access if requesting VIEW
     if (permissionType == SharePermissionType.VIEW) {
-      checkForHigherAccessPermission(owner, requester);
+      return checkForHigherAccessPermission(owner, requester);
     }
+    return Optional.empty();
   }
 
   /**
@@ -167,46 +172,26 @@ public class SharedPermissionValidator {
    * @param owner          the {@link User} who owns the records being shared
    * @param requester      the {@link User} requesting access to the records
    * @param permissionType the type of share permission being requested
-   * @throws IllegalArgumentException if a PENDING/ACCEPT share request already exists
+   * @return if a permission exists, return permission; else empty return
    */
-  public void validateExistingPermission(
+  public Optional<SharedPermission> validateExistingPermission(
       User owner, User requester, SharePermissionType permissionType) {
-    // check against any pre-existing requests with PENDING/ACCEPT statuses. DENY retries allowed
-    List<ShareRequestStatus> relevantStatuses =
-        List.of(ShareRequestStatus.PENDING, ShareRequestStatus.ACCEPT);
-
-    Optional<SharedPermission> existingPermission =
-        sharedPermissionRepository.findFirstByOwnerAndRequesterAndSharePermissionTypeInAndStatusIn(
-            owner, requester, List.of(permissionType), relevantStatuses);
-
-    if (existingPermission.isPresent()) {
-      SharedPermission permission = existingPermission.get();
-
-      if (permission.getStatus() == ShareRequestStatus.PENDING) {
-        throw new IllegalArgumentException("A PENDING share request already exists");
-      }
-
-      if (permission.getStatus() == ShareRequestStatus.ACCEPT) {
-        throw new IllegalArgumentException("The owner has already accepted this share request");
-      }
-    }
+    return sharedPermissionRepository.findFirstByOwnerAndRequesterAndSharePermissionTypeInAndStatusIn(
+        owner, requester, List.of(permissionType),
+        List.of(ShareRequestStatus.PENDING, ShareRequestStatus.ACCEPT));
   }
+
 
   /**
    * Checks if the requester already has higher access permission to the owner's health records.
    *
    * @param owner     the {@link User} who owns the records being shared
    * @param requester the {@link User} requesting access
-   * @throws IllegalArgumentException if the requester already has EDIT/ACCEPT access
+   * @return if a permission exists, return permission; else empty return
    */
-  public void checkForHigherAccessPermission(User owner, User requester) {
-    Optional<SharedPermission> editAccessPermission =
-        sharedPermissionRepository.findByOwnerAndRequesterAndSharePermissionTypeAndStatus(owner,
-            requester, SharePermissionType.EDIT, ShareRequestStatus.ACCEPT);
-
-    if (editAccessPermission.isPresent()) {
-      throw new IllegalArgumentException("Requester already has EDIT access");
-    }
+  public Optional<SharedPermission> checkForHigherAccessPermission(User owner, User requester) {
+    return sharedPermissionRepository.findByOwnerAndRequesterAndSharePermissionTypeAndStatus(
+        owner, requester, SharePermissionType.EDIT, ShareRequestStatus.ACCEPT);
   }
 
   /**
@@ -215,14 +200,15 @@ public class SharedPermissionValidator {
    * @param owner          the {@link User} who owns the health records
    * @param requester      the {@link User} requesting access to the health records
    * @param permissionType the {@link SharePermissionType} the requester is seeking to obtain
+   * @return if a permission exists, return permission; else empty return
    */
-  public void validateCreateShareRequestSetup(
-      User owner, User requester, SharePermissionType permissionType, String requesterId) {
-    validateLoggedInUser(requesterId, requester.getId());
+  public Optional<SharedPermission> validateCreateShareRequestSetup(
+      User owner, User requester, SharePermissionType permissionType) {
+    validateLoggedInUser(jwtUtils.getLoggedInUserId(), requester.getId());
     validateRequesterUserType(requester.getUserType());
     validateDistinctOwnerAndRequester(owner.getId(), requester.getId());
     validateFirstResponderRequest(requester.getUserType(), permissionType);
-    validateCreateShareRequestAttributes(owner, requester, permissionType);
+    return validateCreateShareRequestAttributes(owner, requester, permissionType);
   }
 
   /**
@@ -297,9 +283,8 @@ public class SharedPermissionValidator {
    * @throws ResponseStatusException if the status is pending, throw exception
    */
   public void validateShareRequestAction(
-      SharedPermission permission, String actingOwnerId, ShareRequestStatus responseStatus,
-      String requesterId) {
-    validateLoggedInUser(requesterId, actingOwnerId);
+      SharedPermission permission, String actingOwnerId, ShareRequestStatus responseStatus) {
+    validateLoggedInUser(jwtUtils.getLoggedInUserId(), actingOwnerId);
     validateProperOwner(permission.getOwner().getId(), actingOwnerId);
     validateProperRequestStatusAction(permission.getStatus());
     validateRequestStatusResponse(responseStatus);
@@ -313,9 +298,8 @@ public class SharedPermissionValidator {
    * @param actingOwnerId the userId acting on the share request
    * @throws ResponseStatusException if the status is pending, throw exception
    */
-  public void validateRevokeSharePermission(SharedPermission permission, String actingOwnerId,
-      String requesterId) {
-    validateLoggedInUser(requesterId, actingOwnerId);
+  public void validateRevokeSharePermission(SharedPermission permission, String actingOwnerId) {
+    validateLoggedInUser(jwtUtils.getLoggedInUserId(), actingOwnerId);
     validateProperOwner(permission.getOwner().getId(), actingOwnerId);
     validateProperRevokeRequest(permission.getStatus());
   }

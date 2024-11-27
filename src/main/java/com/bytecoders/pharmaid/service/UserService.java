@@ -13,7 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * Service operations around {@link com.bytecoders.pharmaid.repository.model.User}.
+ * Service operations around {@link User}.
  */
 @Service
 public class UserService {
@@ -50,7 +50,7 @@ public class UserService {
    * @param userId String of user id
    */
   public void deleteUser(String userId) {
-    if(getUser(userId) != null) {
+    if (getUser(userId) != null) {
       userRepository.deleteById(userId);
     }
   }
