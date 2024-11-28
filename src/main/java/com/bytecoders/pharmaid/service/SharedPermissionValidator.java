@@ -176,7 +176,8 @@ public class SharedPermissionValidator {
    */
   public Optional<SharedPermission> validateExistingPermission(
       User owner, User requester, SharePermissionType permissionType) {
-    return sharedPermissionRepository.findFirstByOwnerAndRequesterAndSharePermissionTypeInAndStatusIn(
+    return sharedPermissionRepository
+    .findFirstByOwnerAndRequesterAndSharePermissionTypeInAndStatusIn(
         owner, requester, List.of(permissionType),
         List.of(ShareRequestStatus.PENDING, ShareRequestStatus.ACCEPT));
   }

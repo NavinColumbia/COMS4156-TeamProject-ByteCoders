@@ -4,7 +4,7 @@ info:
   description: PharmaId API for managing users, medications, and prescriptions.
   version: 1.0.0
 servers:
-  - url: https://bytecoders-coms4156.uk.r.appspot.com/
+  - url: https://pharmaid-prod-app-dot-bytecoders-coms4156.uk.r.appspot.com/
     description: Production server
   - url: http://localhost:8080/
     description: Development server
