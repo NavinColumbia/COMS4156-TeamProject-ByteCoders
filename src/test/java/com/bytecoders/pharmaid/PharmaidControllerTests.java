@@ -3,7 +3,11 @@ package com.bytecoders.pharmaid;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.bytecoders.pharmaid.openapi.model.CreatePrescriptionRequest;
 import com.bytecoders.pharmaid.openapi.model.LoginUserRequest;
@@ -375,7 +379,8 @@ public class PharmaidControllerTests {
     when(prescriptionService.updatePrescription(any(Prescription.class))).thenReturn(
             updatedPrescription);
 
-    doThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid end date")).when(prescriptionService)
+    doThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid end date"))
+        .when(prescriptionService)
             .updatePrescription(any(Prescription.class));
 
     ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
